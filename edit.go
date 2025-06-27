@@ -12,11 +12,11 @@ import (
 )
 
 func drawLen(rgba *image.RGBA, h int, w int, extendHeight int, lenModel string) *image.RGBA {
-	fontSize := float64(extendHeight) * 0.2
+	fontSize := float64(extendHeight) * 0.15
 	face, _ := loadFontFace(fontBytes, fontSize)
 	drawer := &font.Drawer{
 		Dst:  rgba,
-		Src:  image.NewUniform(color.Black),
+		Src:  image.NewUniform(color.RGBA{180, 180, 200, 255}),
 		Face: face,
 	}
 	metrics := face.Metrics()
@@ -24,7 +24,7 @@ func drawLen(rgba *image.RGBA, h int, w int, extendHeight int, lenModel string) 
 	descent := metrics.Descent.Round()
 
 	x := int(math.Floor(float64(w) * 0.01))
-	y := h + (extendHeight+ascent-descent)/2 + int(math.Floor(float64(extendHeight)*0.15))
+	y := h + (extendHeight+ascent-descent)/2 + int(math.Floor(float64(extendHeight)*0.17))
 
 	drawer.Dot = fixed.Point26_6{
 		X: fixed.I(x),
@@ -49,7 +49,7 @@ func drawModel(rgba *image.RGBA, h int, w int, extendHeight int, camModel string
 	descent := metrics.Descent.Round()
 
 	x := int(math.Floor(float64(w) * 0.01))
-	y := h + (extendHeight+ascent-descent)/2 - int(math.Floor(float64(extendHeight)*0.15))
+	y := h + (extendHeight+ascent-descent)/2 - int(math.Floor(float64(extendHeight)*0.13))
 
 	drawer.Dot = fixed.Point26_6{
 		X: fixed.I(x),
