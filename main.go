@@ -2,12 +2,15 @@ package main
 
 /*
 #include <stdlib.h>
+#include <string.h>
 */
 import "C"
 import (
+	"bytes"
 	"encoding/json"
 	"image"
 	"image/color"
+	"image/jpeg"
 	"os"
 	"unsafe"
 
@@ -28,33 +31,49 @@ type EXIFInfo struct {
 	Focal35      string `json:"focal35"`
 }
 
-func savePhoto(path string, output string) {
-	// 读取图片
+//export FreeMemory
+func FreeMemory(ptr unsafe.Pointer) {
+	C.free(ptr)
+}
+
+//export ImagePreview
+func ImagePreview(path *C.char, outLength *C.int) *C.uchar {
+	img := imageEdit(C.GoString(path))
+	if img == nil {
+		*outLength = 0
+		return nil
+	}
+	var buf bytes.Buffer
+	if err := jpeg.Encode(&buf, img, nil); err != nil {
+		*outLength = 0
+		return nil
+	}
+	data := buf.Bytes()
+	*outLength = C.int(len(data))
+	ptr := C.malloc(C.size_t(len(data)))
+	C.memcpy(ptr, unsafe.Pointer(&data[0]), C.size_t(len(data)))
+
+	return (*C.uchar)(ptr)
+}
+
+func imageEdit(path string) *image.NRGBA {
 	img, err := imaging.Open(path)
 	if err != nil {
-		return
+		return nil
 	}
 
 	w := img.Bounds().Dx()
 	h := img.Bounds().Dy()
-
-	// 计算新高度：原高度 + 0.15倍高度
 	extendHeight := int(float64(h) * 0.15)
 	newHeight := h + extendHeight
-
-	// 新建一张白色背景图片
 	whiteBg := imaging.New(w, newHeight, color.White)
-
-	// 把原图粘贴到新图的顶部(0,0)
 	result := imaging.Paste(whiteBg, img, image.Pt(0, 0))
-
-	// 保存新图
-	imaging.Save(result, output)
+	return result
 }
 
-//export SavePhoto
-func SavePhoto(path *C.char, output *C.char) {
-	savePhoto(C.GoString(path), C.GoString(output))
+func imageSave(path string, output string) {
+	result := imageEdit(path)
+	imaging.Save(result, output)
 }
 
 func getEXIF(path string) string {
@@ -94,9 +113,9 @@ func getEXIF(path string) string {
 	return string(data)
 }
 
-//export FreeCString
-func FreeCString(str *C.char) {
-	C.free(unsafe.Pointer(str))
+//export ImageSave
+func ImageSave(path *C.char, output *C.char) {
+	imageSave(C.GoString(path), C.GoString(output))
 }
 
 //export GetEXIF
@@ -106,5 +125,6 @@ func GetEXIF(path *C.char) *C.char {
 }
 
 func main() {
-	savePhoto("/Users/zhoucheng/Downloads/DSC_0092.jpg", "/Users/zhoucheng/Downloads/DSC_0092.jpg")
+	// 测试代码
+	// imageSave("/Users/zhoucheng/Downloads/DSC08221.jpg", "/Users/zhoucheng/Downloads/DSC08221_output.jpg")
 }
