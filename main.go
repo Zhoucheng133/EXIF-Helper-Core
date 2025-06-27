@@ -36,6 +36,27 @@ func FreeMemory(ptr unsafe.Pointer) {
 	C.free(ptr)
 }
 
+func previewSize(img image.Image, maxDim int) image.Image {
+	w := img.Bounds().Dx()
+	h := img.Bounds().Dy()
+
+	// 如果都不超过，直接返回原图
+	if w <= maxDim && h <= maxDim {
+		return img
+	}
+
+	var newWidth, newHeight int
+	if w >= h {
+		newWidth = maxDim
+		newHeight = h * maxDim / w
+	} else {
+		newHeight = maxDim
+		newWidth = w * maxDim / h
+	}
+
+	return imaging.Resize(img, newWidth, newHeight, imaging.Lanczos)
+}
+
 //export ImagePreview
 func ImagePreview(path *C.char, outLength *C.int) *C.uchar {
 	img := imageEdit(C.GoString(path))
@@ -43,8 +64,9 @@ func ImagePreview(path *C.char, outLength *C.int) *C.uchar {
 		*outLength = 0
 		return nil
 	}
+	previewImg := previewSize(img, 1000)
 	var buf bytes.Buffer
-	if err := jpeg.Encode(&buf, img, nil); err != nil {
+	if err := jpeg.Encode(&buf, previewImg, nil); err != nil {
 		*outLength = 0
 		return nil
 	}
