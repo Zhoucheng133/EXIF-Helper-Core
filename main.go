@@ -9,14 +9,21 @@ import (
 	"bytes"
 	"encoding/json"
 	"image"
-	"image/color"
 	"image/jpeg"
 	"os"
+	"strings"
 	"unsafe"
+
+	_ "embed"
 
 	"github.com/disintegration/imaging"
 	"github.com/rwcarlsen/goexif/exif"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/opentype"
 )
+
+//go:embed Roboto.ttf
+var fontBytes []byte
 
 type EXIFInfo struct {
 	CamMake      string `json:"camMake"`
@@ -78,19 +85,17 @@ func ImagePreview(path *C.char, outLength *C.int) *C.uchar {
 	return (*C.uchar)(ptr)
 }
 
-func imageEdit(path string) *image.NRGBA {
-	img, err := imaging.Open(path)
+func loadFontFace(fontBytes []byte, fontSize float64) (font.Face, error) {
+	fnt, err := opentype.Parse(fontBytes)
 	if err != nil {
-		return nil
+		return nil, err
 	}
-
-	w := img.Bounds().Dx()
-	h := img.Bounds().Dy()
-	extendHeight := int(float64(h) * 0.15)
-	newHeight := h + extendHeight
-	whiteBg := imaging.New(w, newHeight, color.White)
-	result := imaging.Paste(whiteBg, img, image.Pt(0, 0))
-	return result
+	face, err := opentype.NewFace(fnt, &opentype.FaceOptions{
+		Size:    fontSize,
+		DPI:     72,
+		Hinting: font.HintingFull,
+	})
+	return face, err
 }
 
 func imageSave(path string, output string) {
@@ -98,18 +103,11 @@ func imageSave(path string, output string) {
 	imaging.Save(result, output)
 }
 
-func getEXIF(path string) string {
-	f, err := os.Open(path)
-	if err != nil {
-		return err.Error()
-	}
+func getEXIF(path string) EXIFInfo {
+	f, _ := os.Open(path)
 	defer f.Close()
 
-	x, err := exif.Decode(f)
-	if err != nil {
-		return err.Error()
-	}
-
+	x, _ := exif.Decode(f)
 	getTagString := func(name exif.FieldName) string {
 		tag, err := x.Get(name)
 		if err != nil || tag == nil {
@@ -119,20 +117,19 @@ func getEXIF(path string) string {
 	}
 
 	res := EXIFInfo{
-		CamMake:      getTagString(exif.Make),
-		CamModel:     getTagString(exif.Model),
-		LenMake:      getTagString(exif.LensMake),
-		LenModel:     getTagString(exif.LensModel),
-		CaptureTime:  getTagString(exif.DateTime),
-		ExposureTime: getTagString(exif.ExposureTime),
-		Fnum:         getTagString(exif.FNumber),
-		Iso:          getTagString(exif.ISOSpeedRatings),
-		Focal:        getTagString(exif.FocalLength),
-		Focal35:      getTagString(exif.FocalLengthIn35mmFilm),
+		CamMake:      strings.ReplaceAll(getTagString(exif.Make), "\"", ""),
+		CamModel:     strings.ReplaceAll(getTagString(exif.Model), "\"", ""),
+		LenMake:      strings.ReplaceAll(getTagString(exif.LensMake), "\"", ""),
+		LenModel:     strings.ReplaceAll(getTagString(exif.LensModel), "\"", ""),
+		CaptureTime:  strings.ReplaceAll(getTagString(exif.DateTime), "\"", ""),
+		ExposureTime: strings.ReplaceAll(getTagString(exif.ExposureTime), "\"", ""),
+		Fnum:         strings.ReplaceAll(getTagString(exif.FNumber), "\"", ""),
+		Iso:          strings.ReplaceAll(getTagString(exif.ISOSpeedRatings), "\"", ""),
+		Focal:        strings.ReplaceAll(getTagString(exif.FocalLength), "\"", ""),
+		Focal35:      strings.ReplaceAll(getTagString(exif.FocalLengthIn35mmFilm), "\"", ""),
 	}
 
-	data, _ := json.Marshal(res)
-	return string(data)
+	return res
 }
 
 //export ImageSave
@@ -142,11 +139,13 @@ func ImageSave(path *C.char, output *C.char) {
 
 //export GetEXIF
 func GetEXIF(path *C.char) *C.char {
-	info := getEXIF(C.GoString(path))
-	return C.CString(string(info))
+	// info := getEXIF(C.GoString(path))
+	data, _ := json.Marshal(getEXIF(C.GoString(path)))
+	return C.CString(string(data))
 }
 
 func main() {
 	// 测试代码
-	// imageSave("/Users/zhoucheng/Downloads/DSC08221.jpg", "/Users/zhoucheng/Downloads/DSC08221_output.jpg")
+	imageSave("/Users/zhoucheng/Downloads/DSC08041.jpg", "/Users/zhoucheng/Downloads/DSC08041_output.jpg")
+	// fmt.Println(getEXIF("/Users/zhoucheng/Downloads/DSC08041.JPG"))
 }
