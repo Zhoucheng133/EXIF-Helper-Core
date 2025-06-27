@@ -121,7 +121,7 @@ func getEXIF(path string) EXIFInfo {
 		CamModel:     strings.ReplaceAll(getTagString(exif.Model), "\"", ""),
 		LenMake:      strings.ReplaceAll(getTagString(exif.LensMake), "\"", ""),
 		LenModel:     strings.ReplaceAll(getTagString(exif.LensModel), "\"", ""),
-		CaptureTime:  strings.ReplaceAll(getTagString(exif.DateTime), "\"", ""),
+		CaptureTime:  strings.ReplaceAll(getTagString(exif.DateTimeOriginal), "\"", ""),
 		ExposureTime: strings.ReplaceAll(getTagString(exif.ExposureTime), "\"", ""),
 		Fnum:         strings.ReplaceAll(getTagString(exif.FNumber), "\"", ""),
 		Iso:          strings.ReplaceAll(getTagString(exif.ISOSpeedRatings), "\"", ""),
@@ -146,6 +146,6 @@ func GetEXIF(path *C.char) *C.char {
 
 func main() {
 	// 测试代码
-	imageSave("/Users/zhoucheng/Downloads/DSC08041.jpg", "/Users/zhoucheng/Downloads/DSC08041_output.jpg")
+	// imageSave("/Users/zhoucheng/Downloads/DSC_0335.jpg", "/Users/zhoucheng/Downloads/DSC_0335_output.jpg")
 	// fmt.Println(getEXIF("/Users/zhoucheng/Downloads/DSC08041.JPG"))
 }
