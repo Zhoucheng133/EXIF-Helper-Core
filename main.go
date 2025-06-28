@@ -8,9 +8,11 @@ import "C"
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"image"
 	"image/jpeg"
 	"os"
+	"strconv"
 	"strings"
 	"unsafe"
 
@@ -41,6 +43,36 @@ type EXIFInfo struct {
 //export FreeMemory
 func FreeMemory(ptr unsafe.Pointer) {
 	C.free(ptr)
+}
+
+func evalInt(expr string) (string, error) {
+	parts := strings.Split(expr, "/")
+	if len(parts) != 2 {
+		return "", fmt.Errorf("不支持的表达式格式")
+	}
+	a, err1 := strconv.Atoi(strings.TrimSpace(parts[0]))
+	b, err2 := strconv.Atoi(strings.TrimSpace(parts[1]))
+	if err1 != nil || err2 != nil || b == 0 {
+		return "", fmt.Errorf("格式错误或除数为零")
+	}
+	return fmt.Sprintf("%d", a/b), nil
+}
+
+func evalFloat(expr string) (string, error) {
+	parts := strings.Split(expr, "/")
+	if len(parts) != 2 {
+		return "", fmt.Errorf("不支持的表达式格式")
+	}
+	a, err1 := strconv.ParseFloat(strings.TrimSpace(parts[0]), 64)
+	b, err2 := strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
+	if err1 != nil || err2 != nil || b == 0 {
+		return "", fmt.Errorf("格式错误或除数为零")
+	}
+	result := a / b
+	if result < 1 {
+		return expr, nil
+	}
+	return fmt.Sprintf("%g", result), nil
 }
 
 func previewSize(img image.Image, maxDim int) image.Image {
@@ -116,17 +148,22 @@ func getEXIF(path string) EXIFInfo {
 		return tag.String()
 	}
 
+	Fnum, _ := evalFloat(strings.ReplaceAll(getTagString(exif.FNumber), "\"", ""))
+	focal, _ := evalInt(strings.ReplaceAll(getTagString(exif.FocalLength), "\"", ""))
+	focal35, _ := evalInt(strings.ReplaceAll(getTagString(exif.FocalLengthIn35mmFilm), "\"", ""))
+	exp, _ := evalFloat(strings.ReplaceAll(getTagString(exif.ExposureTime), "\"", ""))
+
 	res := EXIFInfo{
 		CamMake:      strings.ReplaceAll(getTagString(exif.Make), "\"", ""),
 		CamModel:     strings.ReplaceAll(getTagString(exif.Model), "\"", ""),
 		LenMake:      strings.ReplaceAll(getTagString(exif.LensMake), "\"", ""),
 		LenModel:     strings.ReplaceAll(getTagString(exif.LensModel), "\"", ""),
 		CaptureTime:  strings.ReplaceAll(getTagString(exif.DateTimeOriginal), "\"", ""),
-		ExposureTime: strings.ReplaceAll(getTagString(exif.ExposureTime), "\"", ""),
-		Fnum:         strings.ReplaceAll(getTagString(exif.FNumber), "\"", ""),
+		ExposureTime: exp,
+		Fnum:         Fnum,
 		Iso:          strings.ReplaceAll(getTagString(exif.ISOSpeedRatings), "\"", ""),
-		Focal:        strings.ReplaceAll(getTagString(exif.FocalLength), "\"", ""),
-		Focal35:      strings.ReplaceAll(getTagString(exif.FocalLengthIn35mmFilm), "\"", ""),
+		Focal:        focal,
+		Focal35:      focal35,
 	}
 
 	return res
@@ -146,6 +183,6 @@ func GetEXIF(path *C.char) *C.char {
 
 func main() {
 	// 测试代码
-	// imageSave("/Users/zhoucheng/Downloads/DSC_0335.jpg", "/Users/zhoucheng/Downloads/DSC_0335_output.jpg")
+	imageSave("/Users/zhoucheng/Downloads/DSC08041.jpg", "/Users/zhoucheng/Downloads/DSC08041_output.jpg")
 	// fmt.Println(getEXIF("/Users/zhoucheng/Downloads/DSC08041.JPG"))
 }

@@ -6,7 +6,6 @@ import (
 	"image/color"
 	"image/draw"
 	"math"
-	"strconv"
 	"strings"
 
 	"github.com/disintegration/imaging"
@@ -16,35 +15,6 @@ import (
 
 func calMargin(w int) int {
 	return int(math.Floor(float64(w) * 0.03))
-}
-
-func evalNum(expr string) (string, error) {
-	parts := strings.Split(expr, "/")
-	if len(parts) != 2 {
-		return "", fmt.Errorf("不支持的表达式格式")
-	}
-	a, err1 := strconv.Atoi(strings.TrimSpace(parts[0]))
-	b, err2 := strconv.Atoi(strings.TrimSpace(parts[1]))
-	if err1 != nil || err2 != nil || b == 0 {
-		return "", fmt.Errorf("格式错误或除数为零")
-	}
-	return fmt.Sprintf("%d", a/b), nil
-}
-
-func evalExposure(expr string) (string, error) {
-	parts := strings.Split(expr, "/")
-	if len(parts) != 2 {
-		return "", fmt.Errorf("不支持的表达式格式")
-	}
-	a, err1 := strconv.Atoi(strings.TrimSpace(parts[0]))
-	b, err2 := strconv.Atoi(strings.TrimSpace(parts[1]))
-	if err1 != nil || err2 != nil || b == 0 {
-		return "", fmt.Errorf("格式错误或除数为零")
-	}
-	if a/b < 1 {
-		return expr, nil
-	}
-	return fmt.Sprintf("%d", a/b), nil
 }
 
 func drawLen(rgba *image.RGBA, h int, w int, extendHeight int, exif EXIFInfo) *image.RGBA {
@@ -59,9 +29,9 @@ func drawLen(rgba *image.RGBA, h int, w int, extendHeight int, exif EXIFInfo) *i
 	ascent := metrics.Ascent.Round()
 	descent := metrics.Descent.Round()
 
-	focal, _ := evalNum(exif.Focal)
+	// focal, _ := evalNum(exif.Focal)
 
-	text := fmt.Sprintf("%s (%smm)", exif.LenModel, focal)
+	text := fmt.Sprintf("%s (%smm)", exif.LenModel, exif.Focal)
 
 	textWidth := font.MeasureString(face, text).Round()
 
@@ -90,10 +60,10 @@ func drawInfos(rgba *image.RGBA, h int, w int, extendHeight int, exif EXIFInfo) 
 	ascent := metrics.Ascent.Round()
 	descent := metrics.Descent.Round()
 
-	fNum, _ := evalNum(exif.Fnum)
-	exp, _ := evalExposure(exif.ExposureTime)
+	// fNum, _ := evalNum(exif.Fnum)
+	// exp, _ := evalExposure(exif.ExposureTime)
 
-	text := fmt.Sprintf("F%s    %ss    ISO%s", fNum, exp, exif.Iso)
+	text := fmt.Sprintf("F%s    %ss    ISO%s", exif.Fnum, exif.ExposureTime, exif.Iso)
 	textWidth := font.MeasureString(face, text).Round()
 
 	x := w - calMargin(w) - textWidth
