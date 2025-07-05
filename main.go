@@ -182,7 +182,5 @@ func GetEXIF(path *C.char) *C.char {
 }
 
 func main() {
-	// 测试代码
-	imageSave("/Users/zhoucheng/Downloads/DSC08041.jpg", "/Users/zhoucheng/Downloads/DSC08041_output.jpg")
-	// fmt.Println(getEXIF("/Users/zhoucheng/Downloads/DSC08041.JPG"))
+	
 }
