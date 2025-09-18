@@ -99,8 +99,8 @@ func previewSize(img image.Image, maxDim int) image.Image {
 }
 
 //export ImagePreview
-func ImagePreview(path *C.char, outLength *C.int, showLogo C.bool) *C.uchar {
-	img := imageEdit(C.GoString(path), bool(showLogo))
+func ImagePreview(path *C.char, outLength *C.int, showLogo C.int) *C.uchar {
+	img := imageEdit(C.GoString(path), showLogo == 1)
 	if img == nil {
 		*outLength = 0
 		return nil
@@ -173,8 +173,8 @@ func getEXIF(path string) EXIFInfo {
 }
 
 //export ImageSave
-func ImageSave(path *C.char, output *C.char, showLogo C.bool) {
-	imageSave(C.GoString(path), C.GoString(output), bool(showLogo))
+func ImageSave(path *C.char, output *C.char, showLogo C.int) {
+	imageSave(C.GoString(path), C.GoString(output), showLogo == 1)
 }
 
 //export GetEXIF
