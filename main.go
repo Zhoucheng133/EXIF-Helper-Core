@@ -3,6 +3,7 @@ package main
 /*
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 */
 import "C"
 import (
@@ -98,8 +99,8 @@ func previewSize(img image.Image, maxDim int) image.Image {
 }
 
 //export ImagePreview
-func ImagePreview(path *C.char, outLength *C.int) *C.uchar {
-	img := imageEdit(C.GoString(path))
+func ImagePreview(path *C.char, outLength *C.int, showLogo C.bool) *C.uchar {
+	img := imageEdit(C.GoString(path), bool(showLogo))
 	if img == nil {
 		*outLength = 0
 		return nil
@@ -131,8 +132,8 @@ func loadFontFace(fontBytes []byte, fontSize float64) (font.Face, error) {
 	return face, err
 }
 
-func imageSave(path string, output string) {
-	result := imageEdit(path)
+func imageSave(path string, output string, showLogo bool) {
+	result := imageEdit(path, showLogo)
 	imaging.Save(result, output)
 }
 
@@ -172,8 +173,8 @@ func getEXIF(path string) EXIFInfo {
 }
 
 //export ImageSave
-func ImageSave(path *C.char, output *C.char) {
-	imageSave(C.GoString(path), C.GoString(output))
+func ImageSave(path *C.char, output *C.char, showLogo C.bool) {
+	imageSave(C.GoString(path), C.GoString(output), bool(showLogo))
 }
 
 //export GetEXIF
