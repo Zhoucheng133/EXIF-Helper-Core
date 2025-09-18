@@ -68,7 +68,7 @@ func drawInfos(rgba *image.RGBA, h int, w int, extendHeight int, exif EXIFInfo) 
 	// exp, _ := evalExposure(exif.ExposureTime)
 
 	// text := fmt.Sprintf("F%s  %ss  ISO%s", exif.Fnum, exif.ExposureTime, exif.Iso)
-	text := fmt.Sprintf("%s, f/%s", exif.ExposureTime, exif.Fnum)
+	text := fmt.Sprintf("%ss, f/%s", exif.ExposureTime, exif.Fnum)
 	textWidth := font.MeasureString(face, text).Round()
 
 	x := w - calMargin(w) - textWidth
