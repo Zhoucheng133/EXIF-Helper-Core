@@ -24,7 +24,7 @@ import (
 	"golang.org/x/image/font/opentype"
 )
 
-//go:embed Roboto.ttf
+//go:embed inter.ttf
 var fontBytes []byte
 
 type EXIFInfo struct {
@@ -38,6 +38,7 @@ type EXIFInfo struct {
 	Iso          string `json:"iso"`
 	Focal        string `json:"focal"`
 	Focal35      string `json:"focal35"`
+	Orientation  string `json:"orientation"`
 }
 
 //export FreeMemory
@@ -164,6 +165,7 @@ func getEXIF(path string) EXIFInfo {
 		Iso:          strings.ReplaceAll(getTagString(exif.ISOSpeedRatings), "\"", ""),
 		Focal:        focal,
 		Focal35:      focal35,
+		Orientation:  strings.ReplaceAll(getTagString(exif.Orientation), "\"", ""),
 	}
 
 	return res
@@ -182,5 +184,5 @@ func GetEXIF(path *C.char) *C.char {
 }
 
 func main() {
-	
+
 }

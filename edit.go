@@ -1,16 +1,20 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
+	"image/png"
 	"math"
 	"strings"
 
 	"github.com/disintegration/imaging"
 	"golang.org/x/image/font"
 	"golang.org/x/image/math/fixed"
+
+	xdraw "golang.org/x/image/draw"
 )
 
 func calMargin(w int) int {
@@ -49,7 +53,7 @@ func drawLen(rgba *image.RGBA, h int, w int, extendHeight int, exif EXIFInfo) *i
 }
 
 func drawInfos(rgba *image.RGBA, h int, w int, extendHeight int, exif EXIFInfo) *image.RGBA {
-	fontSize := float64(extendHeight) * 0.25
+	fontSize := float64(extendHeight) * 0.2
 	face, _ := loadFontFace(fontBytes, fontSize)
 	drawer := &font.Drawer{
 		Dst:  rgba,
@@ -63,7 +67,8 @@ func drawInfos(rgba *image.RGBA, h int, w int, extendHeight int, exif EXIFInfo) 
 	// fNum, _ := evalNum(exif.Fnum)
 	// exp, _ := evalExposure(exif.ExposureTime)
 
-	text := fmt.Sprintf("F%s    %ss    ISO%s", exif.Fnum, exif.ExposureTime, exif.Iso)
+	// text := fmt.Sprintf("F%s  %ss  ISO%s", exif.Fnum, exif.ExposureTime, exif.Iso)
+	text := fmt.Sprintf("%s, f/%s", exif.ExposureTime, exif.Fnum)
 	textWidth := font.MeasureString(face, text).Round()
 
 	x := w - calMargin(w) - textWidth
@@ -106,7 +111,10 @@ func drawDatetime(rgba *image.RGBA, h int, w int, extendHeight int, dateTime str
 	return rgba
 }
 
-func drawModel(rgba *image.RGBA, h int, w int, extendHeight int, camModel string) *image.RGBA {
+//go:embed assets/*
+var modelImages embed.FS
+
+func drawModel(rgba *image.RGBA, h int, w int, extendHeight int, camModel string, camMake string) *image.RGBA {
 	fontSize := float64(extendHeight) * 0.28
 	face, _ := loadFontFace(fontBytes, fontSize)
 	drawer := &font.Drawer{
@@ -120,6 +128,48 @@ func drawModel(rgba *image.RGBA, h int, w int, extendHeight int, camModel string
 
 	x := calMargin(w)
 	y := h + (extendHeight+ascent-descent)/2 - int(math.Floor(float64(extendHeight)*0.13))
+
+	logoName := ""
+
+	if strings.Contains(strings.ToLower(camMake), "nikon") {
+		logoName = "nikon"
+	} else if strings.Contains(strings.ToLower(camMake), "sony") {
+		logoName = "sony"
+	} else if strings.Contains(strings.ToLower(camMake), "apple") {
+		logoName = "apple"
+	} else if strings.Contains(strings.ToLower(camMake), "canon") {
+		logoName = "canon"
+	} else if strings.Contains(strings.ToLower(camMake), "panasonic") {
+		logoName = "panasonic"
+	} else if strings.Contains(strings.ToLower(camMake), "leica") {
+		logoName = "leica"
+	}
+
+	logoFile, err := modelImages.Open("assets/" + logoName + ".png")
+	if err == nil {
+		defer logoFile.Close()
+		logoImg, _ := png.Decode(logoFile)
+
+		// ==== Step 2: 缩放 logo ====
+		targetHeight := int(float64(extendHeight) * 0.3)
+		scaleW := logoImg.Bounds().Dx() * targetHeight / logoImg.Bounds().Dy()
+		scaledRect := image.Rect(0, 0, scaleW, targetHeight)
+		scaled := image.NewRGBA(scaledRect)
+
+		// 用高质量缩放
+		xdraw.CatmullRom.Scale(scaled, scaledRect, logoImg, logoImg.Bounds(), draw.Over, nil)
+
+		// ==== Step 3: 画到 RGBA ====
+		offset := image.Pt(
+			x,
+			y-targetHeight/2-int(float64(targetHeight)*0.4),
+		)
+		rect := image.Rectangle{Min: offset, Max: offset.Add(scaled.Bounds().Size())}
+		draw.Draw(rgba, rect, scaled, image.Point{}, draw.Over)
+
+		// ==== Step 4: 调整文字起点 ====
+		x += scaleW + int(float64(targetHeight)*0.3) // 给 logo 右侧留 8px 空隙
+	}
 
 	drawer.Dot = fixed.Point26_6{
 		X: fixed.I(x),
@@ -137,18 +187,28 @@ func imageEdit(path string) *image.NRGBA {
 		return nil
 	}
 
+	exif := getEXIF(path)
+
+	switch exif.Orientation {
+	case "3":
+		img = imaging.Rotate180(img)
+	case "6":
+		img = imaging.Rotate270(img)
+	case "8":
+		img = imaging.Rotate90(img)
+	}
+
 	w := img.Bounds().Dx()
 	h := img.Bounds().Dy()
-	extendHeight := int(float64(h) * 0.15)
+	extendHeight := int(float64(h) * 0.12)
 	newHeight := h + extendHeight
 	whiteBg := imaging.New(w, newHeight, color.White)
 	result := imaging.Paste(whiteBg, img, image.Pt(0, 0))
 
 	rgba := image.NewRGBA(result.Bounds())
 	draw.Draw(rgba, rgba.Bounds(), result, image.Point{}, draw.Src)
-	exif := getEXIF(path)
 
-	drawModel(rgba, h, w, extendHeight, exif.CamModel)
+	drawModel(rgba, h, w, extendHeight, exif.CamModel, exif.CamMake)
 	drawDatetime(rgba, h, w, extendHeight, exif.CaptureTime)
 	drawLen(rgba, h, w, extendHeight, exif)
 	drawInfos(rgba, h, w, extendHeight, exif)
