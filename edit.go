@@ -158,7 +158,7 @@ func drawModel(rgba *image.RGBA, h int, w int, extendHeight int, camModel string
 
 			offset := image.Pt(
 				x,
-				y-targetHeight/2-int(float64(targetHeight)*0.4),
+				y-targetHeight/2-int(float64(targetHeight)*0.37),
 			)
 			rect := image.Rectangle{Min: offset, Max: offset.Add(scaled.Bounds().Size())}
 			draw.Draw(rgba, rect, scaled, image.Point{}, draw.Over)
