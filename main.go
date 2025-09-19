@@ -13,7 +13,6 @@ import (
 	"image"
 	"image/jpeg"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"unsafe"
@@ -59,43 +58,6 @@ func evalInt(expr string) (string, error) {
 		return "", fmt.Errorf("格式错误或除数为零")
 	}
 	return fmt.Sprintf("%d", a/b), nil
-}
-
-// 求最大公约数
-func gcd(a, b int) int {
-	for b != 0 {
-		a, b = b, a%b
-	}
-	return a
-}
-
-// 将分数化简成最简形式
-func simplifyFraction(a, b int) string {
-	div := gcd(a, b)
-	return fmt.Sprintf("%d/%d", a/div, b/div)
-}
-
-func evalFloat(expr string) (string, error) {
-	parts := strings.Split(expr, "/")
-	if len(parts) != 2 {
-		return "", fmt.Errorf("不支持的表达式格式")
-	}
-	a, err1 := strconv.ParseFloat(strings.TrimSpace(parts[0]), 64)
-	b, err2 := strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
-	if err1 != nil || err2 != nil || b == 0 {
-		return "", fmt.Errorf("格式错误或除数为零")
-	}
-	result := a / b
-
-	if result < 1 {
-		aInt := int(a)
-		bInt := int(b)
-		if aInt == 0 {
-			return "0", nil
-		}
-		return simplifyFraction(aInt, bInt), nil
-	}
-	return fmt.Sprintf("%g", result), nil
 }
 
 func previewSize(img image.Image, maxDim int) image.Image {
@@ -158,46 +120,12 @@ func imageSave(path string, output string, showLogo bool) {
 	imaging.Save(result, output)
 }
 
-func normalizeSpaces(input string) string {
-	input = strings.ReplaceAll(input, "\"", "")
-	re := regexp.MustCompile(`\s+`)
-	result := re.ReplaceAllString(input, " ")
-	return strings.TrimSpace(result)
-}
-
 func getEXIF(path string) EXIFInfo {
 	f, _ := os.Open(path)
 	defer f.Close()
 
-	x, _ := exif.Decode(f)
-	getTagString := func(name exif.FieldName) string {
-		tag, err := x.Get(name)
-		if err != nil || tag == nil {
-			return ""
-		}
-		return tag.String()
-	}
-
-	Fnum, _ := evalFloat(strings.ReplaceAll(getTagString(exif.FNumber), "\"", ""))
-	focal, _ := evalInt(strings.ReplaceAll(getTagString(exif.FocalLength), "\"", ""))
-	focal35, _ := evalInt(strings.ReplaceAll(getTagString(exif.FocalLengthIn35mmFilm), "\"", ""))
-	exp, _ := evalFloat(strings.ReplaceAll(getTagString(exif.ExposureTime), "\"", ""))
-
-	res := EXIFInfo{
-		CamMake:      normalizeSpaces(getTagString(exif.Make)),
-		CamModel:     normalizeSpaces(getTagString(exif.Model)),
-		LenMake:      normalizeSpaces(getTagString(exif.LensMake)),
-		LenModel:     normalizeSpaces(getTagString(exif.LensModel)),
-		CaptureTime:  strings.ReplaceAll(getTagString(exif.DateTimeOriginal), "\"", ""),
-		ExposureTime: exp,
-		Fnum:         Fnum,
-		Iso:          strings.ReplaceAll(getTagString(exif.ISOSpeedRatings), "\"", ""),
-		Focal:        focal,
-		Focal35:      focal35,
-		Orientation:  strings.ReplaceAll(getTagString(exif.Orientation), "\"", ""),
-	}
-
-	return res
+	data, _ := exif.Decode(f)
+	return formatExif(data)
 }
 
 //export ImageSave
@@ -213,5 +141,5 @@ func GetEXIF(path *C.char) *C.char {
 }
 
 func main() {
-
+	imageSave("/Users/zhoucheng/Downloads/测试照片/索尼.JPG", "/Users/zhoucheng/Downloads/测试照片/输出.jpg", true)
 }
