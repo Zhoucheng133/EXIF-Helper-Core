@@ -143,6 +143,22 @@ func drawModel(rgba *image.RGBA, h int, w int, extendHeight int, camModel string
 			logoName = "panasonic"
 		} else if strings.Contains(strings.ToLower(camMake), "leica") {
 			logoName = "leica"
+		} else if strings.Contains(strings.ToLower(camMake), "fujifilm") {
+			logoName = "fujifilm"
+		} else if strings.Contains(strings.ToLower(camMake), "xiaomi") {
+			logoName = "xiaomi"
+		} else if strings.Contains(strings.ToLower(camMake), "huawei") {
+			logoName = "huawei"
+		} else if strings.Contains(strings.ToLower(camMake), "oppo") {
+			logoName = "oppo"
+		} else if strings.Contains(strings.ToLower(camMake), "vivo") {
+			logoName = "vivo"
+		} else if strings.Contains(strings.ToLower(camMake), "oneplus") {
+			logoName = "oneplus"
+		} else if strings.Contains(strings.ToLower(camMake), "honor") {
+			logoName = "honor"
+		} else if strings.Contains(strings.ToLower(camMake), "google") {
+			logoName = "google"
 		}
 
 		logoFile, err := modelImages.Open("assets/" + logoName + ".png")
