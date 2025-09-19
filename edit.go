@@ -159,6 +159,8 @@ func drawModel(rgba *image.RGBA, h int, w int, extendHeight int, camModel string
 			logoName = "honor"
 		} else if strings.Contains(strings.ToLower(camMake), "google") {
 			logoName = "google"
+		} else if strings.Contains(strings.ToLower(camMake), "samsung") {
+			logoName = "samsung"
 		}
 
 		logoFile, err := modelImages.Open("assets/" + logoName + ".png")
