@@ -13,6 +13,7 @@ import (
 	"image"
 	"image/jpeg"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"unsafe"
@@ -60,6 +61,20 @@ func evalInt(expr string) (string, error) {
 	return fmt.Sprintf("%d", a/b), nil
 }
 
+// 求最大公约数
+func gcd(a, b int) int {
+	for b != 0 {
+		a, b = b, a%b
+	}
+	return a
+}
+
+// 将分数化简成最简形式
+func simplifyFraction(a, b int) string {
+	div := gcd(a, b)
+	return fmt.Sprintf("%d/%d", a/div, b/div)
+}
+
 func evalFloat(expr string) (string, error) {
 	parts := strings.Split(expr, "/")
 	if len(parts) != 2 {
@@ -71,8 +86,14 @@ func evalFloat(expr string) (string, error) {
 		return "", fmt.Errorf("格式错误或除数为零")
 	}
 	result := a / b
+
 	if result < 1 {
-		return expr, nil
+		aInt := int(a)
+		bInt := int(b)
+		if aInt == 0 {
+			return "0", nil
+		}
+		return simplifyFraction(aInt, bInt), nil
 	}
 	return fmt.Sprintf("%g", result), nil
 }
@@ -137,6 +158,13 @@ func imageSave(path string, output string, showLogo bool) {
 	imaging.Save(result, output)
 }
 
+func normalizeSpaces(input string) string {
+	input = strings.ReplaceAll(input, "\"", "")
+	re := regexp.MustCompile(`\s+`)
+	result := re.ReplaceAllString(input, " ")
+	return strings.TrimSpace(result)
+}
+
 func getEXIF(path string) EXIFInfo {
 	f, _ := os.Open(path)
 	defer f.Close()
@@ -156,10 +184,10 @@ func getEXIF(path string) EXIFInfo {
 	exp, _ := evalFloat(strings.ReplaceAll(getTagString(exif.ExposureTime), "\"", ""))
 
 	res := EXIFInfo{
-		CamMake:      strings.ReplaceAll(getTagString(exif.Make), "\"", ""),
-		CamModel:     strings.ReplaceAll(getTagString(exif.Model), "\"", ""),
-		LenMake:      strings.ReplaceAll(getTagString(exif.LensMake), "\"", ""),
-		LenModel:     strings.ReplaceAll(getTagString(exif.LensModel), "\"", ""),
+		CamMake:      normalizeSpaces(getTagString(exif.Make)),
+		CamModel:     normalizeSpaces(getTagString(exif.Model)),
+		LenMake:      normalizeSpaces(getTagString(exif.LensMake)),
+		LenModel:     normalizeSpaces(getTagString(exif.LensModel)),
 		CaptureTime:  strings.ReplaceAll(getTagString(exif.DateTimeOriginal), "\"", ""),
 		ExposureTime: exp,
 		Fnum:         Fnum,
