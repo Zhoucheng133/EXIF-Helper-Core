@@ -9,12 +9,9 @@ import "C"
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"image"
 	"image/jpeg"
 	"os"
-	"strconv"
-	"strings"
 	"unsafe"
 
 	_ "embed"
@@ -47,19 +44,6 @@ func FreeMemory(ptr unsafe.Pointer) {
 	C.free(ptr)
 }
 
-func evalInt(expr string) (string, error) {
-	parts := strings.Split(expr, "/")
-	if len(parts) != 2 {
-		return "", fmt.Errorf("不支持的表达式格式")
-	}
-	a, err1 := strconv.Atoi(strings.TrimSpace(parts[0]))
-	b, err2 := strconv.Atoi(strings.TrimSpace(parts[1]))
-	if err1 != nil || err2 != nil || b == 0 {
-		return "", fmt.Errorf("格式错误或除数为零")
-	}
-	return fmt.Sprintf("%d", a/b), nil
-}
-
 func previewSize(img image.Image, maxDim int) image.Image {
 	w := img.Bounds().Dx()
 	h := img.Bounds().Dy()
@@ -82,8 +66,8 @@ func previewSize(img image.Image, maxDim int) image.Image {
 }
 
 //export ImagePreview
-func ImagePreview(path *C.char, outLength *C.int, showLogo C.int) *C.uchar {
-	img := imageEdit(C.GoString(path), showLogo == 1)
+func ImagePreview(path *C.char, outLength *C.int, showLogo C.int, showF C.int, showCaptureTime C.int, showISO C.int) *C.uchar {
+	img := imageEdit(C.GoString(path), showLogo == 1, showF == 1, showCaptureTime == 1, showISO == 1)
 	if img == nil {
 		*outLength = 0
 		return nil
@@ -115,8 +99,8 @@ func loadFontFace(fontBytes []byte, fontSize float64) (font.Face, error) {
 	return face, err
 }
 
-func imageSave(path string, output string, showLogo bool) {
-	result := imageEdit(path, showLogo)
+func imageSave(path string, output string, showLogo bool, showF bool, showCaptureTime bool, showISO bool) {
+	result := imageEdit(path, showLogo, showF, showCaptureTime, showISO)
 	imaging.Save(result, output)
 }
 
@@ -129,17 +113,16 @@ func getEXIF(path string) EXIFInfo {
 }
 
 //export ImageSave
-func ImageSave(path *C.char, output *C.char, showLogo C.int) {
-	imageSave(C.GoString(path), C.GoString(output), showLogo == 1)
+func ImageSave(path *C.char, output *C.char, showLogo C.int, showF C.int, showCaptureTime C.int, showISO C.int) {
+	imageSave(C.GoString(path), C.GoString(output), showLogo == 1, showF == 1, showCaptureTime == 1, showISO == 1)
 }
 
 //export GetEXIF
 func GetEXIF(path *C.char) *C.char {
-	// info := getEXIF(C.GoString(path))
 	data, _ := json.Marshal(getEXIF(C.GoString(path)))
 	return C.CString(string(data))
 }
 
 func main() {
-	imageSave("/Users/zhoucheng/Downloads/测试照片/索尼.JPG", "/Users/zhoucheng/Downloads/测试照片/输出.jpg", true)
+	imageSave("/Users/zhoucheng/Downloads/照片/DSC_1010.jpg", "/Users/zhoucheng/Downloads/输出.jpg", true, true, true, false)
 }

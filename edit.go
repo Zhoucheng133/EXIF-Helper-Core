@@ -52,7 +52,7 @@ func drawLen(rgba *image.RGBA, h int, w int, extendHeight int, exif EXIFInfo) *i
 	return rgba
 }
 
-func drawInfos(rgba *image.RGBA, h int, w int, extendHeight int, exif EXIFInfo) *image.RGBA {
+func drawInfos(rgba *image.RGBA, h int, w int, extendHeight int, exif EXIFInfo, showF bool, showCaptureTime bool, showISO bool) *image.RGBA {
 	fontSize := float64(extendHeight) * 0.2
 	face, _ := loadFontFace(fontBytes, fontSize)
 	drawer := &font.Drawer{
@@ -67,8 +67,21 @@ func drawInfos(rgba *image.RGBA, h int, w int, extendHeight int, exif EXIFInfo) 
 	// fNum, _ := evalNum(exif.Fnum)
 	// exp, _ := evalExposure(exif.ExposureTime)
 
-	// text := fmt.Sprintf("F%s  %ss  ISO%s", exif.Fnum, exif.ExposureTime, exif.Iso)
-	text := fmt.Sprintf("%ss, f/%s", exif.ExposureTime, exif.Fnum)
+	// text := fmt.Sprintf("%ss, f/%s, ISO%s", exif.ExposureTime, exif.Fnum, exif.Iso)
+	text := ""
+
+	if showCaptureTime {
+		text += fmt.Sprintf("%ss", exif.ExposureTime)
+	}
+
+	if showF {
+		text += fmt.Sprintf(", f/%s", exif.Fnum)
+	}
+
+	if showISO {
+		text += fmt.Sprintf(", ISO%s", exif.Iso)
+	}
+
 	textWidth := font.MeasureString(face, text).Round()
 
 	x := w - calMargin(w) - textWidth
@@ -195,7 +208,7 @@ func drawModel(rgba *image.RGBA, h int, w int, extendHeight int, camModel string
 	return rgba
 }
 
-func imageEdit(path string, showLogo bool) *image.NRGBA {
+func imageEdit(path string, showLogo bool, showF bool, showCaptureTime bool, showISO bool) *image.NRGBA {
 	img, err := imaging.Open(path)
 	if err != nil {
 		return nil
@@ -225,7 +238,7 @@ func imageEdit(path string, showLogo bool) *image.NRGBA {
 	drawModel(rgba, h, w, extendHeight, exif.CamModel, exif.CamMake, showLogo)
 	drawDatetime(rgba, h, w, extendHeight, exif.CaptureTime)
 	drawLen(rgba, h, w, extendHeight, exif)
-	drawInfos(rgba, h, w, extendHeight, exif)
+	drawInfos(rgba, h, w, extendHeight, exif, showF, showCaptureTime, showISO)
 
 	nrgba := imaging.Clone(rgba)
 
