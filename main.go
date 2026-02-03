@@ -66,8 +66,8 @@ func previewSize(img image.Image, maxDim int) image.Image {
 }
 
 //export ImagePreview
-func ImagePreview(path *C.char, outLength *C.int, showLogo C.int, showF C.int, showCaptureTime C.int, showISO C.int) *C.uchar {
-	img := imageEdit(C.GoString(path), showLogo == 1, showF == 1, showCaptureTime == 1, showISO == 1)
+func ImagePreview(path *C.char, outLength *C.int, showLogo C.int, showF C.int, showExposureTime C.int, showISO C.int) *C.uchar {
+	img := imageEdit(C.GoString(path), showLogo == 1, showF == 1, showExposureTime == 1, showISO == 1)
 	if img == nil {
 		*outLength = 0
 		return nil
@@ -99,8 +99,8 @@ func loadFontFace(fontBytes []byte, fontSize float64) (font.Face, error) {
 	return face, err
 }
 
-func imageSave(path string, output string, showLogo bool, showF bool, showCaptureTime bool, showISO bool) {
-	result := imageEdit(path, showLogo, showF, showCaptureTime, showISO)
+func imageSave(path string, output string, showLogo bool, showF bool, showExposureTime bool, showISO bool) {
+	result := imageEdit(path, showLogo, showF, showExposureTime, showISO)
 	imaging.Save(result, output)
 }
 
@@ -113,8 +113,8 @@ func getEXIF(path string) EXIFInfo {
 }
 
 //export ImageSave
-func ImageSave(path *C.char, output *C.char, showLogo C.int, showF C.int, showCaptureTime C.int, showISO C.int) {
-	imageSave(C.GoString(path), C.GoString(output), showLogo == 1, showF == 1, showCaptureTime == 1, showISO == 1)
+func ImageSave(path *C.char, output *C.char, showLogo C.int, showF C.int, showExposureTime C.int, showISO C.int) {
+	imageSave(C.GoString(path), C.GoString(output), showLogo == 1, showF == 1, showExposureTime == 1, showISO == 1)
 }
 
 //export GetEXIF
