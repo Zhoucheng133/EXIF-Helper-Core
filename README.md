@@ -12,4 +12,10 @@ go mod tidy
 go build -o build/image.dll -buildmode=c-shared .
 # macOS系统
 go build -o build/image.dylib -buildmode=c-shared .
+
+# 如果你使用比较新版本的golang，使用下面的命令生成动态库
+#  macOS
+go build -buildmode=c-shared -ldflags="-s -w" -o build/image.dylib
+# Windows
+go build -buildmode=c-shared -ldflags="-s -w" -o build/image.dll
 ```
