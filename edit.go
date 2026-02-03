@@ -70,17 +70,17 @@ func drawInfos(rgba *image.RGBA, h int, w int, extendHeight int, exif EXIFInfo, 
 	// text := fmt.Sprintf("%ss, f/%s, ISO%s", exif.ExposureTime, exif.Fnum, exif.Iso)
 	text := ""
 
+	var parts []string
 	if showExposureTime {
-		text += fmt.Sprintf("%ss", exif.ExposureTime)
+		parts = append(parts, fmt.Sprintf("%ss", exif.ExposureTime))
 	}
-
 	if showF {
-		text += fmt.Sprintf(", f/%s", exif.Fnum)
+		parts = append(parts, fmt.Sprintf("f/%s", exif.Fnum))
 	}
-
 	if showISO {
-		text += fmt.Sprintf(", ISO%s", exif.Iso)
+		parts = append(parts, fmt.Sprintf("ISO%s", exif.Iso))
 	}
+	text = strings.Join(parts, ", ")
 
 	textWidth := font.MeasureString(face, text).Round()
 
