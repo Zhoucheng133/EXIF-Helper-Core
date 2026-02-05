@@ -214,7 +214,11 @@ func imageEdit(path string, showLogo bool, showF bool, showExposureTime bool, sh
 		return nil
 	}
 
-	exif := getEXIF(path)
+	exif, err := getEXIF(path)
+
+	if err != nil {
+		return nil
+	}
 
 	switch exif.Orientation {
 	case "3":

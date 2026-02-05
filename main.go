@@ -104,12 +104,22 @@ func imageSave(path string, output string, showLogo bool, showF bool, showExposu
 	imaging.Save(result, output)
 }
 
-func getEXIF(path string) EXIFInfo {
-	f, _ := os.Open(path)
+func getEXIF(path string) (EXIFInfo, error) {
+	f, err := os.Open(path)
+
+	if err != nil {
+		return EXIFInfo{}, err
+	}
+
 	defer f.Close()
 
-	data, _ := exif.Decode(f)
-	return formatExif(data)
+	data, err := exif.Decode(f)
+
+	if err != nil {
+		return EXIFInfo{}, err
+	}
+
+	return formatExif(data), nil
 }
 
 //export ImageSave
@@ -119,7 +129,11 @@ func ImageSave(path *C.char, output *C.char, showLogo C.int, showF C.int, showEx
 
 //export GetEXIF
 func GetEXIF(path *C.char) *C.char {
-	data, _ := json.Marshal(getEXIF(C.GoString(path)))
+	info, err := getEXIF(C.GoString(path))
+	if err != nil {
+		return C.CString("")
+	}
+	data, _ := json.Marshal(info)
 	return C.CString(string(data))
 }
 
