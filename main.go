@@ -57,6 +57,4 @@ func GetEXIF(path *C.char) *C.char {
 	return C.CString(string(data))
 }
 
-func main() {
-	utils.ImageSave("/Users/zhoucheng/Downloads/照片/DSC_1010.jpg", "/Users/zhoucheng/Downloads/输出.jpg", true, true, true, false)
-}
+func main() {}
