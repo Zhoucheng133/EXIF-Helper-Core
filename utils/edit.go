@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"embed"
@@ -17,6 +17,43 @@ import (
 	xdraw "golang.org/x/image/draw"
 )
 
+func logoNameHandler(camMake string) string {
+	logoName := ""
+	if strings.Contains(strings.ToLower(camMake), "nikon") {
+		logoName = "nikon"
+	} else if strings.Contains(strings.ToLower(camMake), "sony") {
+		logoName = "sony"
+	} else if strings.Contains(strings.ToLower(camMake), "apple") {
+		logoName = "apple"
+	} else if strings.Contains(strings.ToLower(camMake), "canon") {
+		logoName = "canon"
+	} else if strings.Contains(strings.ToLower(camMake), "panasonic") {
+		logoName = "panasonic"
+	} else if strings.Contains(strings.ToLower(camMake), "leica") {
+		logoName = "leica"
+	} else if strings.Contains(strings.ToLower(camMake), "fujifilm") {
+		logoName = "fujifilm"
+	} else if strings.Contains(strings.ToLower(camMake), "xiaomi") {
+		logoName = "xiaomi"
+	} else if strings.Contains(strings.ToLower(camMake), "huawei") {
+		logoName = "huawei"
+	} else if strings.Contains(strings.ToLower(camMake), "oppo") {
+		logoName = "oppo"
+	} else if strings.Contains(strings.ToLower(camMake), "vivo") {
+		logoName = "vivo"
+	} else if strings.Contains(strings.ToLower(camMake), "oneplus") {
+		logoName = "oneplus"
+	} else if strings.Contains(strings.ToLower(camMake), "honor") {
+		logoName = "honor"
+	} else if strings.Contains(strings.ToLower(camMake), "google") {
+		logoName = "google"
+	} else if strings.Contains(strings.ToLower(camMake), "samsung") {
+		logoName = "samsung"
+	}
+
+	return logoName
+}
+
 func calMargin(w int) int {
 	return int(math.Floor(float64(w) * 0.03))
 }
@@ -32,8 +69,6 @@ func drawLen(rgba *image.RGBA, h int, w int, extendHeight int, exif EXIFInfo) *i
 	metrics := face.Metrics()
 	ascent := metrics.Ascent.Round()
 	descent := metrics.Descent.Round()
-
-	// focal, _ := evalNum(exif.Focal)
 
 	text := fmt.Sprintf("%s (%smm)", exif.LenModel, exif.Focal)
 
@@ -143,39 +178,7 @@ func drawModel(rgba *image.RGBA, h int, w int, extendHeight int, camModel string
 	y := h + (extendHeight+ascent-descent)/2 - int(math.Floor(float64(extendHeight)*0.13))
 
 	if showLogo {
-		logoName := ""
-		if strings.Contains(strings.ToLower(camMake), "nikon") {
-			logoName = "nikon"
-		} else if strings.Contains(strings.ToLower(camMake), "sony") {
-			logoName = "sony"
-		} else if strings.Contains(strings.ToLower(camMake), "apple") {
-			logoName = "apple"
-		} else if strings.Contains(strings.ToLower(camMake), "canon") {
-			logoName = "canon"
-		} else if strings.Contains(strings.ToLower(camMake), "panasonic") {
-			logoName = "panasonic"
-		} else if strings.Contains(strings.ToLower(camMake), "leica") {
-			logoName = "leica"
-		} else if strings.Contains(strings.ToLower(camMake), "fujifilm") {
-			logoName = "fujifilm"
-		} else if strings.Contains(strings.ToLower(camMake), "xiaomi") {
-			logoName = "xiaomi"
-		} else if strings.Contains(strings.ToLower(camMake), "huawei") {
-			logoName = "huawei"
-		} else if strings.Contains(strings.ToLower(camMake), "oppo") {
-			logoName = "oppo"
-		} else if strings.Contains(strings.ToLower(camMake), "vivo") {
-			logoName = "vivo"
-		} else if strings.Contains(strings.ToLower(camMake), "oneplus") {
-			logoName = "oneplus"
-		} else if strings.Contains(strings.ToLower(camMake), "honor") {
-			logoName = "honor"
-		} else if strings.Contains(strings.ToLower(camMake), "google") {
-			logoName = "google"
-		} else if strings.Contains(strings.ToLower(camMake), "samsung") {
-			logoName = "samsung"
-		}
-
+		logoName := logoNameHandler(camMake)
 		logoFile, err := modelImages.Open("assets/" + logoName + ".png")
 		if err == nil {
 			defer logoFile.Close()
@@ -208,13 +211,13 @@ func drawModel(rgba *image.RGBA, h int, w int, extendHeight int, camModel string
 	return rgba
 }
 
-func imageEdit(path string, showLogo bool, showF bool, showExposureTime bool, showISO bool) *image.NRGBA {
+func ImageEdit(path string, showLogo bool, showF bool, showExposureTime bool, showISO bool) *image.NRGBA {
 	img, err := imaging.Open(path)
 	if err != nil {
 		return nil
 	}
 
-	exif, err := getEXIF(path)
+	exif, err := GetEXIF(path)
 
 	if err != nil {
 		return nil
