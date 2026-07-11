@@ -18,40 +18,41 @@ import (
 )
 
 func logoNameHandler(camMake string) string {
-	logoName := ""
-	if strings.Contains(strings.ToLower(camMake), "nikon") {
-		logoName = "nikon"
-	} else if strings.Contains(strings.ToLower(camMake), "sony") {
-		logoName = "sony"
-	} else if strings.Contains(strings.ToLower(camMake), "apple") {
-		logoName = "apple"
-	} else if strings.Contains(strings.ToLower(camMake), "canon") {
-		logoName = "canon"
-	} else if strings.Contains(strings.ToLower(camMake), "panasonic") {
-		logoName = "panasonic"
-	} else if strings.Contains(strings.ToLower(camMake), "leica") {
-		logoName = "leica"
-	} else if strings.Contains(strings.ToLower(camMake), "fujifilm") {
-		logoName = "fujifilm"
-	} else if strings.Contains(strings.ToLower(camMake), "xiaomi") {
-		logoName = "xiaomi"
-	} else if strings.Contains(strings.ToLower(camMake), "huawei") {
-		logoName = "huawei"
-	} else if strings.Contains(strings.ToLower(camMake), "oppo") {
-		logoName = "oppo"
-	} else if strings.Contains(strings.ToLower(camMake), "vivo") {
-		logoName = "vivo"
-	} else if strings.Contains(strings.ToLower(camMake), "oneplus") {
-		logoName = "oneplus"
-	} else if strings.Contains(strings.ToLower(camMake), "honor") {
-		logoName = "honor"
-	} else if strings.Contains(strings.ToLower(camMake), "google") {
-		logoName = "google"
-	} else if strings.Contains(strings.ToLower(camMake), "samsung") {
-		logoName = "samsung"
+	lower := strings.ToLower(camMake)
+	switch {
+	case strings.Contains(lower, "nikon"):
+		return "nikon"
+	case strings.Contains(lower, "sony"):
+		return "sony"
+	case strings.Contains(lower, "apple"):
+		return "apple"
+	case strings.Contains(lower, "canon"):
+		return "canon"
+	case strings.Contains(lower, "panasonic"):
+		return "panasonic"
+	case strings.Contains(lower, "leica"):
+		return "leica"
+	case strings.Contains(lower, "fujifilm"):
+		return "fujifilm"
+	case strings.Contains(lower, "xiaomi"):
+		return "xiaomi"
+	case strings.Contains(lower, "huawei"):
+		return "huawei"
+	case strings.Contains(lower, "oppo"):
+		return "oppo"
+	case strings.Contains(lower, "vivo"):
+		return "vivo"
+	case strings.Contains(lower, "oneplus"):
+		return "oneplus"
+	case strings.Contains(lower, "honor"):
+		return "honor"
+	case strings.Contains(lower, "google"):
+		return "google"
+	case strings.Contains(lower, "samsung"):
+		return "samsung"
+	default:
+		return ""
 	}
-
-	return logoName
 }
 
 func calMargin(w int) int {
@@ -177,8 +178,9 @@ func drawModel(rgba *image.RGBA, h int, w int, extendHeight int, camModel string
 	x := calMargin(w)
 	y := h + (extendHeight+ascent-descent)/2 - int(math.Floor(float64(extendHeight)*0.13))
 
-	if showLogo {
-		logoName := logoNameHandler(camMake)
+	logoName := logoNameHandler(camMake)
+
+	if showLogo && logoName != "" {
 		logoFile, err := modelImages.Open("assets/" + logoName + ".png")
 		if err == nil {
 			defer logoFile.Close()
