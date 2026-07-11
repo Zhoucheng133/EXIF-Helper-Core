@@ -17,43 +17,43 @@ import (
 	xdraw "golang.org/x/image/draw"
 )
 
-func logoNameHandler(camMake string) string {
+func logoNameHandler(camMake string) (string, int) {
 	lower := strings.ToLower(camMake)
 	switch {
 	case strings.Contains(lower, "nikon"):
-		return "nikon"
+		return "nikon", 2
 	case strings.Contains(lower, "sony"):
-		return "sony"
+		return "sony", 4
 	case strings.Contains(lower, "apple"):
-		return "apple"
+		return "apple", 2
 	case strings.Contains(lower, "canon"):
-		return "canon"
+		return "canon", 4
 	case strings.Contains(lower, "panasonic"):
-		return "panasonic"
+		return "panasonic", 4
 	case strings.Contains(lower, "leica"):
-		return "leica"
+		return "leica", 2
 	case strings.Contains(lower, "fujifilm"):
-		return "fujifilm"
+		return "fujifilm", 4
 	case strings.Contains(lower, "xiaomi"):
-		return "xiaomi"
+		return "xiaomi", 2
 	case strings.Contains(lower, "huawei"):
-		return "huawei"
+		return "huawei", 2
 	case strings.Contains(lower, "oppo"):
-		return "oppo"
+		return "oppo", 4
 	case strings.Contains(lower, "vivo"):
-		return "vivo"
+		return "vivo", 4
 	case strings.Contains(lower, "oneplus"):
-		return "oneplus"
+		return "oneplus", 2
 	case strings.Contains(lower, "honor"):
-		return "honor"
+		return "honor", 4
 	case strings.Contains(lower, "google"):
-		return "google"
+		return "google", 2
 	case strings.Contains(lower, "samsung"):
-		return "samsung"
+		return "samsung", 4
 	case strings.Contains(lower, "om digital") || strings.Contains(lower, "olympus"):
-		return "olympus"
+		return "olympus", 4
 	default:
-		return ""
+		return "", 2
 	}
 }
 
@@ -165,6 +165,32 @@ func drawDatetime(rgba *image.RGBA, h int, w int, extendHeight int, dateTime str
 //go:embed assets/*
 var modelImages embed.FS
 
+func drawLogo(rgba *image.RGBA, h, w, extendHeight int, camMake string) {
+	logoName, ratio := logoNameHandler(camMake)
+	if logoName == "" {
+		return
+	}
+	logoFile, err := modelImages.Open("assets/" + logoName + ".png")
+	if err != nil {
+		return
+	}
+	defer logoFile.Close()
+	logoImg, _ := png.Decode(logoFile)
+
+	targetHeight := extendHeight / ratio
+	scaleW := logoImg.Bounds().Dx() * targetHeight / logoImg.Bounds().Dy()
+	scaledRect := image.Rect(0, 0, scaleW, targetHeight)
+	scaled := image.NewRGBA(scaledRect)
+	xdraw.CatmullRom.Scale(scaled, scaledRect, logoImg, logoImg.Bounds(), draw.Over, nil)
+
+	x := (w - scaleW) / 2
+	y := h + (extendHeight-targetHeight)/2
+
+	offset := image.Pt(x, y)
+	rect := image.Rectangle{Min: offset, Max: offset.Add(scaled.Bounds().Size())}
+	draw.Draw(rgba, rect, scaled, image.Point{}, draw.Over)
+}
+
 func drawModel(rgba *image.RGBA, h int, w int, extendHeight int, camModel string, camMake string, showLogo bool) *image.RGBA {
 	fontSize := float64(extendHeight) * 0.28
 	face, _ := loadFontFace(fontBytes, fontSize)
@@ -180,29 +206,8 @@ func drawModel(rgba *image.RGBA, h int, w int, extendHeight int, camModel string
 	x := calMargin(w)
 	y := h + (extendHeight+ascent-descent)/2 - int(math.Floor(float64(extendHeight)*0.13))
 
-	logoName := logoNameHandler(camMake)
-
-	if showLogo && logoName != "" {
-		logoFile, err := modelImages.Open("assets/" + logoName + ".png")
-		if err == nil {
-			defer logoFile.Close()
-			logoImg, _ := png.Decode(logoFile)
-
-			targetHeight := int(float64(extendHeight) * 0.3)
-			scaleW := logoImg.Bounds().Dx() * targetHeight / logoImg.Bounds().Dy()
-			scaledRect := image.Rect(0, 0, scaleW, targetHeight)
-			scaled := image.NewRGBA(scaledRect)
-			xdraw.CatmullRom.Scale(scaled, scaledRect, logoImg, logoImg.Bounds(), draw.Over, nil)
-
-			offset := image.Pt(
-				x,
-				y-targetHeight/2-int(float64(targetHeight)*0.37),
-			)
-			rect := image.Rectangle{Min: offset, Max: offset.Add(scaled.Bounds().Size())}
-			draw.Draw(rgba, rect, scaled, image.Point{}, draw.Over)
-
-			x += scaleW + int(float64(targetHeight)*0.3)
-		}
+	if showLogo {
+		drawLogo(rgba, h, w, extendHeight, camMake)
 	}
 
 	drawer.Dot = fixed.Point26_6{
