@@ -50,6 +50,8 @@ func logoNameHandler(camMake string) string {
 		return "google"
 	case strings.Contains(lower, "samsung"):
 		return "samsung"
+	case strings.Contains(lower, "om digital") || strings.Contains(lower, "olympus"):
+		return "olympus"
 	default:
 		return ""
 	}
