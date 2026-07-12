@@ -17,43 +17,43 @@ import (
 	xdraw "golang.org/x/image/draw"
 )
 
-func logoNameHandler(camMake string) (string, int) {
+func logoNameHandler(camMake string) (string, float64) {
 	lower := strings.ToLower(camMake)
 	switch {
 	case strings.Contains(lower, "nikon"):
-		return "nikon", 2
+		return "nikon", 2.5
 	case strings.Contains(lower, "sony"):
-		return "sony", 4
+		return "sony", 5.0
 	case strings.Contains(lower, "apple"):
-		return "apple", 2
+		return "apple", 2.5
 	case strings.Contains(lower, "canon"):
-		return "canon", 4
+		return "canon", 5.0
 	case strings.Contains(lower, "panasonic"):
-		return "panasonic", 4
+		return "panasonic", 5.0
 	case strings.Contains(lower, "leica"):
-		return "leica", 2
+		return "leica", 2.5
 	case strings.Contains(lower, "fujifilm"):
-		return "fujifilm", 4
+		return "fujifilm", 5.0
 	case strings.Contains(lower, "xiaomi"):
-		return "xiaomi", 2
+		return "xiaomi", 2.5
 	case strings.Contains(lower, "huawei"):
-		return "huawei", 2
+		return "huawei", 2.5
 	case strings.Contains(lower, "oppo"):
-		return "oppo", 4
+		return "oppo", 5.0
 	case strings.Contains(lower, "vivo"):
-		return "vivo", 4
+		return "vivo", 5.0
 	case strings.Contains(lower, "oneplus"):
-		return "oneplus", 2
+		return "oneplus", 2.5
 	case strings.Contains(lower, "honor"):
-		return "honor", 4
+		return "honor", 5.0
 	case strings.Contains(lower, "google"):
-		return "google", 2
+		return "google", 2.5
 	case strings.Contains(lower, "samsung"):
-		return "samsung", 4
+		return "samsung", 5.0
 	case strings.Contains(lower, "om digital") || strings.Contains(lower, "olympus"):
-		return "olympus", 4
+		return "olympus", 5.0
 	default:
-		return "", 2
+		return "", 2.5
 	}
 }
 
@@ -177,7 +177,7 @@ func drawLogo(rgba *image.RGBA, h, w, extendHeight int, camMake string) {
 	defer logoFile.Close()
 	logoImg, _ := png.Decode(logoFile)
 
-	targetHeight := extendHeight / ratio
+	targetHeight := int(float64(extendHeight) / ratio)
 	scaleW := logoImg.Bounds().Dx() * targetHeight / logoImg.Bounds().Dy()
 	scaledRect := image.Rect(0, 0, scaleW, targetHeight)
 	scaled := image.NewRGBA(scaledRect)
