@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"exif_helper/utils"
 	"image/jpeg"
+	"runtime"
 	"unsafe"
 
 	_ "embed"
@@ -33,11 +34,13 @@ func ImagePreview(path *C.char, outLength *C.int, showLogo C.int, showF C.int, s
 		*outLength = 0
 		return nil
 	}
+	img = nil
 	data := buf.Bytes()
 	*outLength = C.int(len(data))
 	ptr := C.malloc(C.size_t(len(data)))
 	C.memcpy(ptr, unsafe.Pointer(&data[0]), C.size_t(len(data)))
 
+	runtime.GC()
 	return (*C.uchar)(ptr)
 }
 
