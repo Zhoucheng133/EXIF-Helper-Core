@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"image"
 	"os"
+	"sync"
 
 	"github.com/disintegration/imaging"
 	"github.com/rwcarlsen/goexif/exif"
@@ -46,21 +47,37 @@ func GetEXIF(path string) (EXIFInfo, error) {
 //go:embed assets/inter.ttf
 var fontBytes []byte
 
-func loadFontFace(fontBytes []byte, fontSize float64) (font.Face, error) {
-	fnt, err := opentype.Parse(fontBytes)
-	if err != nil {
-		return nil, err
+var (
+	fontOnce   sync.Once
+	parsedFont *opentype.Font
+)
+
+func getParsedFont() *opentype.Font {
+	fontOnce.Do(func() {
+		fnt, err := opentype.Parse(fontBytes)
+		if err != nil {
+			return
+		}
+		parsedFont = fnt
+	})
+	return parsedFont
+}
+
+func loadFontFace(fontSize float64) font.Face {
+	fnt := getParsedFont()
+	if fnt == nil {
+		return nil
 	}
-	face, err := opentype.NewFace(fnt, &opentype.FaceOptions{
+	face, _ := opentype.NewFace(fnt, &opentype.FaceOptions{
 		Size:    fontSize,
 		DPI:     72,
 		Hinting: font.HintingFull,
 	})
-	return face, err
+	return face
 }
 
 func ImageSave(path string, output string, showLogo bool, showF bool, showExposureTime bool, showISO bool) {
-	result := ImageEdit(path, showLogo, showF, showExposureTime, showISO)
+	result := ImageEdit(path, showLogo, showF, showExposureTime, showISO, 0)
 	imaging.Save(result, output)
 }
 

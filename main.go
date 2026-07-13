@@ -23,14 +23,13 @@ func FreeMemory(ptr unsafe.Pointer) {
 
 //export ImagePreview
 func ImagePreview(path *C.char, outLength *C.int, showLogo C.int, showF C.int, showExposureTime C.int, showISO C.int) *C.uchar {
-	img := utils.ImageEdit(C.GoString(path), showLogo == 1, showF == 1, showExposureTime == 1, showISO == 1)
+	img := utils.ImageEdit(C.GoString(path), showLogo == 1, showF == 1, showExposureTime == 1, showISO == 1, 1000)
 	if img == nil {
 		*outLength = 0
 		return nil
 	}
-	previewImg := utils.PreviewSize(img, 1000)
 	var buf bytes.Buffer
-	if err := jpeg.Encode(&buf, previewImg, nil); err != nil {
+	if err := jpeg.Encode(&buf, img, nil); err != nil {
 		*outLength = 0
 		return nil
 	}

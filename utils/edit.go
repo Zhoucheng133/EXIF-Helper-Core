@@ -9,6 +9,7 @@ import (
 	"image/png"
 	"math"
 	"strings"
+	"sync"
 
 	"github.com/disintegration/imaging"
 	"golang.org/x/image/font"
@@ -61,11 +62,32 @@ func calMargin(w int) int {
 	return int(math.Floor(float64(w) * 0.03))
 }
 
-func drawLen(rgba *image.RGBA, h int, w int, extendHeight int, exif EXIFInfo) *image.RGBA {
+var logoCache sync.Map
+
+func getDecodedLogo(name string) image.Image {
+	if cached, ok := logoCache.Load(name); ok {
+		return cached.(image.Image)
+	}
+	file, err := modelImages.Open("assets/" + name + ".png")
+	if err != nil {
+		return nil
+	}
+	defer file.Close()
+	img, _ := png.Decode(file)
+	if img != nil {
+		logoCache.Store(name, img)
+	}
+	return img
+}
+
+func drawLen(dst draw.Image, h int, w int, extendHeight int, exif EXIFInfo) {
 	fontSize := float64(extendHeight) * 0.15
-	face, _ := loadFontFace(fontBytes, fontSize)
+	face := loadFontFace(fontSize)
+	if face == nil {
+		return
+	}
 	drawer := &font.Drawer{
-		Dst:  rgba,
+		Dst:  dst,
 		Src:  image.NewUniform(color.RGBA{180, 180, 200, 255}),
 		Face: face,
 	}
@@ -86,15 +108,16 @@ func drawLen(rgba *image.RGBA, h int, w int, extendHeight int, exif EXIFInfo) *i
 	}
 
 	drawer.DrawString(text)
-
-	return rgba
 }
 
-func drawInfos(rgba *image.RGBA, h int, w int, extendHeight int, exif EXIFInfo, showF bool, showExposureTime bool, showISO bool) *image.RGBA {
+func drawInfos(dst draw.Image, h int, w int, extendHeight int, exif EXIFInfo, showF bool, showExposureTime bool, showISO bool) {
 	fontSize := float64(extendHeight) * 0.2
-	face, _ := loadFontFace(fontBytes, fontSize)
+	face := loadFontFace(fontSize)
+	if face == nil {
+		return
+	}
 	drawer := &font.Drawer{
-		Dst:  rgba,
+		Dst:  dst,
 		Src:  image.NewUniform(color.Black),
 		Face: face,
 	}
@@ -102,10 +125,6 @@ func drawInfos(rgba *image.RGBA, h int, w int, extendHeight int, exif EXIFInfo, 
 	ascent := metrics.Ascent.Round()
 	descent := metrics.Descent.Round()
 
-	// fNum, _ := evalNum(exif.Fnum)
-	// exp, _ := evalExposure(exif.ExposureTime)
-
-	// text := fmt.Sprintf("%ss, f/%s, ISO%s", exif.ExposureTime, exif.Fnum, exif.Iso)
 	text := ""
 
 	var parts []string
@@ -131,15 +150,16 @@ func drawInfos(rgba *image.RGBA, h int, w int, extendHeight int, exif EXIFInfo, 
 	}
 
 	drawer.DrawString(text)
-
-	return rgba
 }
 
-func drawDatetime(rgba *image.RGBA, h int, w int, extendHeight int, dateTime string) *image.RGBA {
+func drawDatetime(dst draw.Image, h int, w int, extendHeight int, dateTime string) {
 	fontSize := float64(extendHeight) * 0.15
-	face, _ := loadFontFace(fontBytes, fontSize)
+	face := loadFontFace(fontSize)
+	if face == nil {
+		return
+	}
 	drawer := &font.Drawer{
-		Dst:  rgba,
+		Dst:  dst,
 		Src:  image.NewUniform(color.RGBA{180, 180, 200, 255}),
 		Face: face,
 	}
@@ -158,24 +178,20 @@ func drawDatetime(rgba *image.RGBA, h int, w int, extendHeight int, dateTime str
 	time := strings.Replace(dateTime, ":", "-", 2)
 
 	drawer.DrawString(time)
-
-	return rgba
 }
 
 //go:embed assets/*
 var modelImages embed.FS
 
-func drawLogo(rgba *image.RGBA, h, w, extendHeight int, camMake string) {
+func drawLogo(dst draw.Image, h, w, extendHeight int, camMake string) {
 	logoName, ratio := logoNameHandler(camMake)
 	if logoName == "" {
 		return
 	}
-	logoFile, err := modelImages.Open("assets/" + logoName + ".png")
-	if err != nil {
+	logoImg := getDecodedLogo(logoName)
+	if logoImg == nil {
 		return
 	}
-	defer logoFile.Close()
-	logoImg, _ := png.Decode(logoFile)
 
 	targetHeight := int(float64(extendHeight) / ratio)
 	scaleW := logoImg.Bounds().Dx() * targetHeight / logoImg.Bounds().Dy()
@@ -188,14 +204,17 @@ func drawLogo(rgba *image.RGBA, h, w, extendHeight int, camMake string) {
 
 	offset := image.Pt(x, y)
 	rect := image.Rectangle{Min: offset, Max: offset.Add(scaled.Bounds().Size())}
-	draw.Draw(rgba, rect, scaled, image.Point{}, draw.Over)
+	draw.Draw(dst, rect, scaled, image.Point{}, draw.Over)
 }
 
-func drawModel(rgba *image.RGBA, h int, w int, extendHeight int, camModel string, camMake string, showLogo bool) *image.RGBA {
+func drawModel(dst draw.Image, h int, w int, extendHeight int, camModel string, camMake string, showLogo bool) {
 	fontSize := float64(extendHeight) * 0.28
-	face, _ := loadFontFace(fontBytes, fontSize)
+	face := loadFontFace(fontSize)
+	if face == nil {
+		return
+	}
 	drawer := &font.Drawer{
-		Dst:  rgba,
+		Dst:  dst,
 		Src:  image.NewUniform(color.Black),
 		Face: face,
 	}
@@ -207,7 +226,7 @@ func drawModel(rgba *image.RGBA, h int, w int, extendHeight int, camModel string
 	y := h + (extendHeight+ascent-descent)/2 - int(math.Floor(float64(extendHeight)*0.13))
 
 	if showLogo {
-		drawLogo(rgba, h, w, extendHeight, camMake)
+		drawLogo(dst, h, w, extendHeight, camMake)
 	}
 
 	drawer.Dot = fixed.Point26_6{
@@ -216,11 +235,9 @@ func drawModel(rgba *image.RGBA, h int, w int, extendHeight int, camModel string
 	}
 
 	drawer.DrawString(camModel)
-
-	return rgba
 }
 
-func ImageEdit(path string, showLogo bool, showF bool, showExposureTime bool, showISO bool) *image.NRGBA {
+func ImageEdit(path string, showLogo bool, showF bool, showExposureTime bool, showISO bool, maxDim int) *image.NRGBA {
 	img, err := imaging.Open(path)
 	if err != nil {
 		return nil
@@ -243,20 +260,30 @@ func ImageEdit(path string, showLogo bool, showF bool, showExposureTime bool, sh
 
 	w := img.Bounds().Dx()
 	h := img.Bounds().Dy()
+
+	if maxDim > 0 && (w > maxDim || h > maxDim) {
+		var newW, newH int
+		if w >= h {
+			newW = maxDim
+			newH = h * maxDim / w
+		} else {
+			newH = maxDim
+			newW = w * maxDim / h
+		}
+		img = imaging.Resize(img, newW, newH, imaging.Lanczos)
+		w = newW
+		h = newH
+	}
+
 	extendHeight := int(float64(h) * 0.12)
 	newHeight := h + extendHeight
 	whiteBg := imaging.New(w, newHeight, color.White)
 	result := imaging.Paste(whiteBg, img, image.Pt(0, 0))
 
-	rgba := image.NewRGBA(result.Bounds())
-	draw.Draw(rgba, rgba.Bounds(), result, image.Point{}, draw.Src)
+	drawModel(result, h, w, extendHeight, exif.CamModel, exif.CamMake, showLogo)
+	drawDatetime(result, h, w, extendHeight, exif.CaptureTime)
+	drawLen(result, h, w, extendHeight, exif)
+	drawInfos(result, h, w, extendHeight, exif, showF, showExposureTime, showISO)
 
-	drawModel(rgba, h, w, extendHeight, exif.CamModel, exif.CamMake, showLogo)
-	drawDatetime(rgba, h, w, extendHeight, exif.CaptureTime)
-	drawLen(rgba, h, w, extendHeight, exif)
-	drawInfos(rgba, h, w, extendHeight, exif, showF, showExposureTime, showISO)
-
-	nrgba := imaging.Clone(rgba)
-
-	return nrgba
+	return result
 }
