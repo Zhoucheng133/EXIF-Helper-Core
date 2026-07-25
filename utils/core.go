@@ -101,3 +101,12 @@ func PreviewSize(img image.Image, maxDim int) image.Image {
 
 	return imaging.Resize(img, newWidth, newHeight, imaging.Lanczos)
 }
+
+func RemoveExif(inputPath string, outputPath string) error {
+	img, err := imaging.Open(inputPath)
+	if err != nil {
+		return err
+	}
+
+	return imaging.Save(img, outputPath)
+}

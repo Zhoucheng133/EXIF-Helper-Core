@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"exif_helper/utils"
 	"image/jpeg"
+	"path/filepath"
 	"runtime"
 	"unsafe"
 
@@ -57,6 +58,21 @@ func GetEXIF(path *C.char) *C.char {
 	}
 	data, _ := json.Marshal(info)
 	return C.CString(string(data))
+}
+
+//export RemoveExif
+func RemoveExif(inputPath *C.char, outputDir *C.char) C.int {
+	inPath := C.GoString(inputPath)
+	outDir := C.GoString(outputDir)
+
+	filename := filepath.Base(inPath)
+	outPath := filepath.Join(outDir, filename)
+
+	err := utils.RemoveExif(inPath, outPath)
+	if err != nil {
+		return 1
+	}
+	return 0
 }
 
 func main() {}
