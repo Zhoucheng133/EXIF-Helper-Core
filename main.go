@@ -69,4 +69,26 @@ func EditEXIF(inputPath *C.char, output *C.char, exif *C.char) {
 	utils.EditEXIF(C.GoString(inputPath), C.GoString(output), C.GoString(exif))
 }
 
-func main() {}
+// 测试用例
+// func test() {
+// 	err := utils.EditEXIF("/Users/zhoucheng/Downloads/DSC_2400.jpg", "/Users/zhoucheng/Downloads/DSC_2400_out.jpg", `{
+// 	"camMake": "NIKON CORPORATION",
+// 	"camModel": "NIKON Z 30",
+// 	"lenMake": "NIKKOR",
+// 	"lenModel": "NIKKOR Z DX 16-50mm f/3.5-6.3 VR",
+// 	"captureTime": "2026:07:27 22:15:30",
+// 	"exposureTime": "3/2",
+// 	"fNum": "5.6",
+// 	"iso": "100",
+// 	"focal": "35",
+// 	"focal35": "52",
+// 	"orientation": "1"
+// 	}`)
+// 	if err != nil {
+// 		fmt.Println(err.Error())
+// 	}
+// }
+
+func main() {
+	// test()
+}
