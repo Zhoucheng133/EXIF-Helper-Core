@@ -239,7 +239,7 @@ func drawModel(dst draw.Image, h int, w int, extendHeight int, camModel string, 
 	drawer.DrawString(camModel)
 }
 
-func ImageEdit(path string, showLogo bool, showF bool, showExposureTime bool, showISO bool, maxDim int) *image.NRGBA {
+func ImageDraw(path string, showLogo bool, showF bool, showExposureTime bool, showISO bool, maxDim int) *image.NRGBA {
 	img, err := imaging.Open(path)
 	if err != nil {
 		return nil

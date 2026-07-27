@@ -86,7 +86,7 @@ func loadFontFace(fontSize float64) font.Face {
 }
 
 func ImageSave(path string, output string, showLogo bool, showF bool, showExposureTime bool, showISO bool) {
-	result := ImageEdit(path, showLogo, showF, showExposureTime, showISO, 0)
+	result := ImageDraw(path, showLogo, showF, showExposureTime, showISO, 0)
 	imaging.Save(result, output)
 }
 

@@ -24,7 +24,7 @@ func FreeMemory(ptr unsafe.Pointer) {
 
 //export ImagePreview
 func ImagePreview(path *C.char, outLength *C.int, showLogo C.int, showF C.int, showExposureTime C.int, showISO C.int) *C.uchar {
-	img := utils.ImageEdit(C.GoString(path), showLogo == 1, showF == 1, showExposureTime == 1, showISO == 1, 1000)
+	img := utils.ImageDraw(C.GoString(path), showLogo == 1, showF == 1, showExposureTime == 1, showISO == 1, 1000)
 	if img == nil {
 		*outLength = 0
 		return nil
@@ -89,6 +89,4 @@ func EditEXIF(inputPath *C.char, output *C.char, exif *C.char) {
 // 	}
 // }
 
-func main() {
-	// test()
-}
+func main() {}
