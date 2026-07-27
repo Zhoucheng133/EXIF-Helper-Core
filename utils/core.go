@@ -120,7 +120,7 @@ func RemoveExif(inputPath string, outputPath string) error {
 	return imaging.Save(img, outputPath)
 }
 
-func EditEXIF(inputPath string, outputDir string, exifJSON string) error {
+func EditEXIF(inputPath string, output string, exifJSON string) error {
 	var info EXIFInfo
 	if err := json.Unmarshal([]byte(exifJSON), &info); err != nil {
 		return fmt.Errorf("解析EXIF JSON失败: %w", err)
@@ -247,11 +247,12 @@ func EditEXIF(inputPath string, outputDir string, exifJSON string) error {
 		return fmt.Errorf("写入EXIF到segment失败: %w", err)
 	}
 
-	if err := os.MkdirAll(outputDir, 0755); err != nil {
-		return fmt.Errorf("创建输出目录失败: %w", err)
+	if dir := filepath.Dir(output); dir != "" && dir != "." {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("创建输出目录失败: %w", err)
+		}
 	}
-	outPath := filepath.Join(outputDir, filepath.Base(inputPath))
-	outFile, err := os.Create(outPath)
+	outFile, err := os.Create(output)
 	if err != nil {
 		return fmt.Errorf("创建输出文件失败: %w", err)
 	}
