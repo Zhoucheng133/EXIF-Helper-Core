@@ -90,6 +90,8 @@ type ImageOptions struct {
 	ShowF            bool `json:"showF"`
 	ShowExposureTime bool `json:"showExposureTime"`
 	ShowISO          bool `json:"showISO"`
+	ShowFocal        bool `json:"showFocal"`
+	ShowLenModel     bool `json:"showLenModel"`
 }
 
 func ImageSave(path string, output string, options ImageOptions) {

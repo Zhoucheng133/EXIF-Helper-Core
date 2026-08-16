@@ -82,7 +82,7 @@ func getDecodedLogo(name string) image.Image {
 	return img
 }
 
-func drawLen(dst draw.Image, h int, w int, extendHeight int, exif EXIFInfo) {
+func drawLen(dst draw.Image, h int, w int, extendHeight int, exif EXIFInfo, options ImageOptions) {
 	fontSize := float64(extendHeight) * 0.15
 	face := loadFontFace(fontSize)
 	if face == nil {
@@ -97,7 +97,17 @@ func drawLen(dst draw.Image, h int, w int, extendHeight int, exif EXIFInfo) {
 	ascent := metrics.Ascent.Round()
 	descent := metrics.Descent.Round()
 
-	text := fmt.Sprintf("%s (%smm)", exif.LenModel, exif.Focal)
+	text := ""
+
+	if strings.TrimSpace(exif.LenModel) == "" {
+		text = fmt.Sprintf("%smm", exif.Focal)
+	} else if options.ShowLenModel && options.ShowFocal {
+		text = fmt.Sprintf("%s (%smm)", exif.LenModel, exif.Focal)
+	} else if options.ShowFocal && !options.ShowLenModel {
+		text = fmt.Sprintf("%smm", exif.Focal)
+	} else if options.ShowLenModel && !options.ShowFocal {
+		text = exif.LenModel
+	}
 
 	textWidth := font.MeasureString(face, text).Round()
 
@@ -284,7 +294,7 @@ func ImageDraw(path string, options ImageOptions, maxDim int) *image.NRGBA {
 
 	drawModel(result, h, w, extendHeight, exif.CamModel, exif.CamMake, options)
 	drawDatetime(result, h, w, extendHeight, exif.CaptureTime)
-	drawLen(result, h, w, extendHeight, exif)
+	drawLen(result, h, w, extendHeight, exif, options)
 	drawInfos(result, h, w, extendHeight, exif, options)
 
 	return result
