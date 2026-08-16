@@ -17,14 +17,24 @@ import (
 	_ "embed"
 )
 
+func parseImageOptions(options *C.char) utils.ImageOptions {
+	var imageOptions utils.ImageOptions
+	if options == nil {
+		return imageOptions
+	}
+	_ = json.Unmarshal([]byte(C.GoString(options)), &imageOptions)
+	return imageOptions
+}
+
 //export FreeMemory
 func FreeMemory(ptr unsafe.Pointer) {
 	C.free(ptr)
 }
 
 //export ImagePreview
-func ImagePreview(path *C.char, outLength *C.int, showLogo C.int, showF C.int, showExposureTime C.int, showISO C.int) *C.uchar {
-	img := utils.ImageDraw(C.GoString(path), showLogo == 1, showF == 1, showExposureTime == 1, showISO == 1, 1000)
+func ImagePreview(path *C.char, outLength *C.int, options *C.char) *C.uchar {
+	imageOptions := parseImageOptions(options)
+	img := utils.ImageDraw(C.GoString(path), imageOptions, 1000)
 	if img == nil {
 		*outLength = 0
 		return nil
@@ -45,8 +55,9 @@ func ImagePreview(path *C.char, outLength *C.int, showLogo C.int, showF C.int, s
 }
 
 //export ImageSave
-func ImageSave(path *C.char, output *C.char, showLogo C.int, showF C.int, showExposureTime C.int, showISO C.int) {
-	utils.ImageSave(C.GoString(path), C.GoString(output), showLogo == 1, showF == 1, showExposureTime == 1, showISO == 1)
+func ImageSave(path *C.char, output *C.char, options *C.char) {
+	imageOptions := parseImageOptions(options)
+	utils.ImageSave(C.GoString(path), C.GoString(output), imageOptions)
 }
 
 //export GetEXIF

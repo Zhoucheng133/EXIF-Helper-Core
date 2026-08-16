@@ -85,8 +85,15 @@ func loadFontFace(fontSize float64) font.Face {
 	return face
 }
 
-func ImageSave(path string, output string, showLogo bool, showF bool, showExposureTime bool, showISO bool) {
-	result := ImageDraw(path, showLogo, showF, showExposureTime, showISO, 0)
+type ImageOptions struct {
+	ShowLogo         bool `json:"showLogo"`
+	ShowF            bool `json:"showF"`
+	ShowExposureTime bool `json:"showExposureTime"`
+	ShowISO          bool `json:"showISO"`
+}
+
+func ImageSave(path string, output string, options ImageOptions) {
+	result := ImageDraw(path, options, 0)
 	imaging.Save(result, output)
 }
 

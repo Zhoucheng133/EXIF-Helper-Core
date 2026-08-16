@@ -112,7 +112,7 @@ func drawLen(dst draw.Image, h int, w int, extendHeight int, exif EXIFInfo) {
 	drawer.DrawString(text)
 }
 
-func drawInfos(dst draw.Image, h int, w int, extendHeight int, exif EXIFInfo, showF bool, showExposureTime bool, showISO bool) {
+func drawInfos(dst draw.Image, h int, w int, extendHeight int, exif EXIFInfo, options ImageOptions) {
 	fontSize := float64(extendHeight) * 0.2
 	face := loadFontFace(fontSize)
 	if face == nil {
@@ -130,13 +130,13 @@ func drawInfos(dst draw.Image, h int, w int, extendHeight int, exif EXIFInfo, sh
 	text := ""
 
 	var parts []string
-	if showExposureTime {
+	if options.ShowExposureTime {
 		parts = append(parts, fmt.Sprintf("%ss", exif.ExposureTime))
 	}
-	if showF {
+	if options.ShowF {
 		parts = append(parts, fmt.Sprintf("f/%s", exif.Fnum))
 	}
-	if showISO {
+	if options.ShowISO {
 		parts = append(parts, fmt.Sprintf("ISO%s", exif.Iso))
 	}
 	text = strings.Join(parts, ", ")
@@ -209,7 +209,7 @@ func drawLogo(dst draw.Image, h, w, extendHeight int, camMake string) {
 	draw.Draw(dst, rect, scaled, image.Point{}, draw.Over)
 }
 
-func drawModel(dst draw.Image, h int, w int, extendHeight int, camModel string, camMake string, showLogo bool) {
+func drawModel(dst draw.Image, h int, w int, extendHeight int, camModel string, camMake string, options ImageOptions) {
 	fontSize := float64(extendHeight) * 0.28
 	face := loadFontFace(fontSize)
 	if face == nil {
@@ -227,7 +227,7 @@ func drawModel(dst draw.Image, h int, w int, extendHeight int, camModel string, 
 	x := calMargin(w)
 	y := h + (extendHeight+ascent-descent)/2 - int(math.Floor(float64(extendHeight)*0.13))
 
-	if showLogo {
+	if options.ShowLogo {
 		drawLogo(dst, h, w, extendHeight, camMake)
 	}
 
@@ -239,7 +239,7 @@ func drawModel(dst draw.Image, h int, w int, extendHeight int, camModel string, 
 	drawer.DrawString(camModel)
 }
 
-func ImageDraw(path string, showLogo bool, showF bool, showExposureTime bool, showISO bool, maxDim int) *image.NRGBA {
+func ImageDraw(path string, options ImageOptions, maxDim int) *image.NRGBA {
 	img, err := imaging.Open(path)
 	if err != nil {
 		return nil
@@ -282,10 +282,10 @@ func ImageDraw(path string, showLogo bool, showF bool, showExposureTime bool, sh
 	whiteBg := imaging.New(w, newHeight, color.White)
 	result := imaging.Paste(whiteBg, img, image.Pt(0, 0))
 
-	drawModel(result, h, w, extendHeight, exif.CamModel, exif.CamMake, showLogo)
+	drawModel(result, h, w, extendHeight, exif.CamModel, exif.CamMake, options)
 	drawDatetime(result, h, w, extendHeight, exif.CaptureTime)
 	drawLen(result, h, w, extendHeight, exif)
-	drawInfos(result, h, w, extendHeight, exif, showF, showExposureTime, showISO)
+	drawInfos(result, h, w, extendHeight, exif, options)
 
 	return result
 }
