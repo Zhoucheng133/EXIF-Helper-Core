@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+rm -rf ./build/libcore.xcframework ./tmp
+mkdir -p ./tmp
+
 DEVICE_SDK=$(xcrun --sdk iphoneos --show-sdk-path)
 SIM_SDK=$(xcrun --sdk iphonesimulator --show-sdk-path)
 
