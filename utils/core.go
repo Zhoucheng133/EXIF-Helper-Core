@@ -22,17 +22,20 @@ import (
 )
 
 type EXIFInfo struct {
-	CamMake      string `json:"camMake"`
-	CamModel     string `json:"camModel"`
-	LenMake      string `json:"lenMake"`
-	LenModel     string `json:"lenModel"`
-	CaptureTime  string `json:"captureTime"`
-	ExposureTime string `json:"exposureTime"`
-	Fnum         string `json:"fNum"`
-	Iso          string `json:"iso"`
-	Focal        string `json:"focal"`
-	Focal35      string `json:"focal35"`
-	Orientation  string `json:"orientation"`
+	CamMake      string   `json:"camMake"`
+	CamModel     string   `json:"camModel"`
+	LenMake      string   `json:"lenMake"`
+	LenModel     string   `json:"lenModel"`
+	CaptureTime  string   `json:"captureTime"`
+	ExposureTime string   `json:"exposureTime"`
+	Fnum         string   `json:"fNum"`
+	Iso          string   `json:"iso"`
+	Focal        string   `json:"focal"`
+	Focal35      string   `json:"focal35"`
+	Orientation  string   `json:"orientation"`
+	Latitude     *float64 `json:"latitude"`
+	Longitude    *float64 `json:"longitude"`
+	Altitude     *float64 `json:"altitude"`
 }
 
 func GetEXIF(path string) (EXIFInfo, error) {
@@ -251,6 +254,72 @@ func EditEXIF(inputPath string, output string, exifJSON string) error {
 		}
 	}
 
+	// ---------- GPS SubIFD ----------
+	if info.Latitude != nil || info.Longitude != nil {
+		gpsIb, err := goexif3.GetOrCreateIbFromRootIb(rootIb, "IFD/GPSInfo")
+		if err != nil {
+			return fmt.Errorf("获取GPSInfo SubIFD失败: %w", err)
+		}
+
+		if info.Latitude != nil {
+			lat := *info.Latitude
+			latRef := "N"
+			if lat < 0 {
+				latRef = "S"
+				lat = -lat
+			}
+			if err := gpsIb.SetStandardWithName("GPSLatitudeRef", latRef); err != nil {
+				return fmt.Errorf("设置GPSLatitudeRef失败: %w", err)
+			}
+			latDeg, latMin, latSec := decimalToDMS(lat)
+			latRationals := []exifcommon.Rational{
+				{Numerator: uint32(latDeg), Denominator: 1},
+				{Numerator: uint32(latMin), Denominator: 1},
+				{Numerator: uint32(latSec * 100), Denominator: 100},
+			}
+			if err := gpsIb.SetStandardWithName("GPSLatitude", latRationals); err != nil {
+				return fmt.Errorf("设置GPSLatitude失败: %w", err)
+			}
+		}
+
+		if info.Longitude != nil {
+			lon := *info.Longitude
+			lonRef := "E"
+			if lon < 0 {
+				lonRef = "W"
+				lon = -lon
+			}
+			if err := gpsIb.SetStandardWithName("GPSLongitudeRef", lonRef); err != nil {
+				return fmt.Errorf("设置GPSLongitudeRef失败: %w", err)
+			}
+			lonDeg, lonMin, lonSec := decimalToDMS(lon)
+			lonRationals := []exifcommon.Rational{
+				{Numerator: uint32(lonDeg), Denominator: 1},
+				{Numerator: uint32(lonMin), Denominator: 1},
+				{Numerator: uint32(lonSec * 100), Denominator: 100},
+			}
+			if err := gpsIb.SetStandardWithName("GPSLongitude", lonRationals); err != nil {
+				return fmt.Errorf("设置GPSLongitude失败: %w", err)
+			}
+		}
+
+		if info.Altitude != nil {
+			alt := *info.Altitude
+			altRef := uint8(0) // 0 = Above sea level
+			if alt < 0 {
+				altRef = 1 // 1 = Below sea level
+				alt = -alt
+			}
+			if err := gpsIb.SetStandardWithName("GPSAltitudeRef", []uint8{altRef}); err != nil {
+				return fmt.Errorf("设置GPSAltitudeRef失败: %w", err)
+			}
+			altRational := exifcommon.Rational{Numerator: uint32(alt * 100), Denominator: 100}
+			if err := gpsIb.SetStandardWithName("GPSAltitude", []exifcommon.Rational{altRational}); err != nil {
+				return fmt.Errorf("设置GPSAltitude失败: %w", err)
+			}
+		}
+	}
+
 	// 把修改后的EXIF写回segment list
 	if err := sl.SetExif(rootIb); err != nil {
 		return fmt.Errorf("写入EXIF到segment失败: %w", err)
@@ -318,6 +387,17 @@ func gcd(a, b uint32) uint32 {
 		a, b = b, a%b
 	}
 	return a
+}
+
+func decimalToDMS(decimal float64) (deg int, min int, sec float64) {
+	if decimal < 0 {
+		decimal = -decimal
+	}
+	deg = int(decimal)
+	remainder := (decimal - float64(deg)) * 60
+	min = int(remainder)
+	sec = (remainder - float64(min)) * 60
+	return
 }
 
 func normalizeExifTime(s string) (string, error) {

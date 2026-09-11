@@ -77,5 +77,25 @@ func formatExif(data *exif.Exif) EXIFInfo {
 		Orientation:  getTagString(data, exif.Orientation),
 	}
 
+	if lat, lon, err := data.LatLong(); err == nil {
+		latCopy := lat
+		lonCopy := lon
+		res.Latitude = &latCopy
+		res.Longitude = &lonCopy
+	}
+
+	if altTag, err := data.Get(exif.GPSAltitude); err == nil {
+		if rat, err := altTag.Rat(0); err == nil {
+			val, _ := rat.Float64()
+			if altRefTag, err := data.Get(exif.GPSAltitudeRef); err == nil {
+				if intVal, err := altRefTag.Int(0); err == nil && intVal == 1 {
+					val = -val
+				}
+			}
+			altCopy := val
+			res.Altitude = &altCopy
+		}
+	}
+
 	return res
 }
