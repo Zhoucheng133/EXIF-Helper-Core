@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"exif_helper/utils"
+	"fmt"
 	"image/jpeg"
 	"runtime"
 	"unsafe"
@@ -99,5 +100,14 @@ func EditEXIF(inputPath *C.char, output *C.char, exif *C.char) {
 // 		fmt.Println(err.Error())
 // 	}
 // }
+
+func test2() {
+	data, err := utils.GetEXIF("/Users/zhoucheng/Downloads/IMG_6837.JPG")
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	info, _ := json.Marshal(data)
+	fmt.Println(string(info))
+}
 
 func main() {}
