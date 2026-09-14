@@ -62,6 +62,60 @@ func getTagString(x *exif.Exif, name exif.FieldName) string {
 	return strings.TrimSpace(str)
 }
 
+func safeLatLong(data *exif.Exif) (lat, lon *float64) {
+	defer func() {
+		if recover() != nil {
+			lat = nil
+			lon = nil
+		}
+	}()
+	vLat, vLon, err := data.LatLong()
+	if err != nil {
+		return nil, nil
+	}
+	if math.IsNaN(vLat) || math.IsInf(vLat, 0) ||
+		math.IsNaN(vLon) || math.IsInf(vLon, 0) {
+		return nil, nil
+	}
+	return &vLat, &vLon
+}
+
+func safeAltitude(data *exif.Exif) (alt *float64) {
+
+	defer func() {
+		if recover() != nil {
+			alt = nil
+		}
+	}()
+
+	altTag, err := data.Get(exif.GPSAltitude)
+	if err != nil {
+		return nil
+	}
+
+	rat, err := altTag.Rat(0)
+	if err != nil {
+		return nil
+	}
+
+	val, ok := rat.Float64()
+	if !ok {
+		return nil
+	}
+
+	if math.IsNaN(val) || math.IsInf(val, 0) {
+		return nil
+	}
+
+	if altRefTag, err := data.Get(exif.GPSAltitudeRef); err == nil {
+		if intVal, err := altRefTag.Int(0); err == nil && intVal == 1 {
+			val = -val
+		}
+	}
+
+	return &val
+}
+
 func formatExif(data *exif.Exif) EXIFInfo {
 	res := EXIFInfo{
 		CamMake:      getTagString(data, exif.Make),
@@ -77,25 +131,10 @@ func formatExif(data *exif.Exif) EXIFInfo {
 		Orientation:  getTagString(data, exif.Orientation),
 	}
 
-	if lat, lon, err := data.LatLong(); err == nil {
-		latCopy := lat
-		lonCopy := lon
-		res.Latitude = &latCopy
-		res.Longitude = &lonCopy
-	}
-
-	if altTag, err := data.Get(exif.GPSAltitude); err == nil {
-		if rat, err := altTag.Rat(0); err == nil {
-			val, _ := rat.Float64()
-			if altRefTag, err := data.Get(exif.GPSAltitudeRef); err == nil {
-				if intVal, err := altRefTag.Int(0); err == nil && intVal == 1 {
-					val = -val
-				}
-			}
-			altCopy := val
-			res.Altitude = &altCopy
-		}
-	}
+	lat, lon := safeLatLong(data)
+	res.Latitude = lat
+	res.Longitude = lon
+	res.Altitude = safeAltitude(data)
 
 	return res
 }
