@@ -16,6 +16,7 @@ import (
 	goexif3 "github.com/dsoprea/go-exif/v3"
 	exifcommon "github.com/dsoprea/go-exif/v3/common"
 	jis "github.com/dsoprea/go-jpeg-image-structure/v2"
+	rwexif "github.com/rwcarlsen/goexif/exif"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
 )
@@ -38,17 +39,21 @@ type EXIFInfo struct {
 }
 
 func GetEXIF(path string) (EXIFInfo, error) {
-	rawExif, err := goexif3.SearchFileAndExtractExif(path)
+	f, err := os.Open(path)
+
 	if err != nil {
 		return EXIFInfo{}, err
 	}
 
-	entries, _, err := goexif3.GetFlatExifData(rawExif, nil)
+	defer f.Close()
+
+	data, err := rwexif.Decode(f)
+
 	if err != nil {
 		return EXIFInfo{}, err
 	}
 
-	return formatExif(entries), nil
+	return formatExif(data), nil
 }
 
 //go:embed assets/inter.ttf
